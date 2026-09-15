@@ -4,6 +4,84 @@ All engineering activities, architectural milestones, and experimental progress 
 
 ---
 
+## [2026-09-15] — Milestone 3: Research Definition, Literature Review & Baseline/Metric Formalization
+
+**Milestone Identifier:** M3  
+**Milestone Owner:** Adishri Abro (Literature & Evaluation Lead)  
+**Collaborators:** Rahul (Team Lead), Tanishka Mukhi (Dataset & Architecture Lead)  
+**Status:** Completed & Grounded in Verified Academic Literature  
+
+### 1. Milestone Objectives Achieved
+- **Comprehensive Literature Review:** Authored `literature_review.md` spanning 14 verified peer-reviewed publications across 6 core research domains:
+  1. Remote sensing cross-modal image-text retrieval (RSICD, CLIP, RemoteCLIP).
+  2. Vision-language foundation models and dual-encoder architectures (Radford et al., 2021).
+  3. Classical deterministic change detection (Singh, 1989; Wang et al., 2004; Malila, 1980; Otsu, 1979).
+  4. Lightweight deep learning change detection (Daudt et al., 2018; Ronneberger et al., 2015; Chen & Shi, 2020).
+  5. False-alarm taxonomy and non-ground confounder handling (Hall et al., 1991; Bovolo & Bruzzone, 2007; Canty & Nielsen, 2008).
+  6. Quality-aware, uncertainty-aware, and diagnostic gating prior art (Kendall & Gal, 2017).
+- **Critical Citation Audit Executed:**
+  - Audited the widely conflated WHU Building Dataset literature.
+  - **Audit Finding:** The true bi-temporal change detection paper is *Ji, Shen, Lu, & Zhang (2019), Remote Sensing, 11(11), 1343* (`10.3390/rs11111343`). The frequently cited *Ji, Wei, & Lu (2019), IEEE TGRS, 57(1), 574–586* is strictly a mono-temporal building extraction/segmentation paper. The citation record is now formally corrected.
+- **Formal Metrics Specification (`metrics.md`):**
+  - Formulated exact mathematical definitions for retrieval: Recall@K ($K \in \{1, 5, 10\}$), MRR, and Precision@K. Formally codified the **Caption-to-Own-Image** protocol over 1,093 held-out RSICD test scenes (5,465 queries) as the primary benchmark.
+  - Formulated exact confusion matrix metrics for change detection: Precision, Recall, F1-score, and IoU (Jaccard Index).
+  - Mathematically demonstrated the **Overall Accuracy (OA) Trap**: On LEVIR-CD's measured $4.651\%$ change class imbalance, a trivial null predictor scores $95.349\%$ OA with zero F1. Formally deprecated OA for model selection.
+  - Formulated CPU computational profiling metrics: wall-clock latency (mean, $p50$, $p95$), peak memory RSS (MB), heap allocation, parameter counts, and index storage.
+  - Formulated perturbation robustness metrics: Relative F1 Degradation ($\Delta F_1$) and False Positive Amplification Factor (FPAF).
+- **Leakage-Safe Thresholding Protocol:**
+  - Established that classical difference thresholds must be determined either via unsupervised Otsu or calibrated strictly on the 64-scene validation split ($\tau^* = \arg\max_{\tau} F_1(\tau; \mathcal{D}_{\text{val}})$) and frozen before test evaluation. Test-set threshold tuning is strictly prohibited.
+- **Research-Gap Analysis & Novelty Classification:**
+  - Identified 4 evidence-backed research gaps (lack of CPU-constrained trade-off studies, fragility under controlled non-ground perturbations, threshold data leakage, and zero-shot VLM domain shift under nadir view).
+  - Conducted a novelty audit on the proposed quality-aware change scoring concept: Classified it objectively as an **ADAPTATION & COMBINATION** rather than foundational novelty, eliminating unsupported claims.
+- **Updated Research Questions & Experiment Plan:**
+  - Updated `research_questions.md` (RQ1–RQ4, H1–H4, variables, epistemic categories).
+  - Updated `experiment_plan.md` with explicit protocols for Suites A, B, C, D, and E, complete with inputs, outputs, controls, variables, and methodological interpretations.
+- **Decision Records:**
+  - Added DEC-014 through DEC-019 to `decision_log.md`.
+
+### 2. Documents Created / Modified
+1. `literature_review.md` `[NEW]` — Comprehensive literature review, evidence table, citation audit, research gaps, novelty classification, and verified references.
+2. `metrics.md` `[NEW]` — Formal mathematical and operational specifications for all retrieval, change-detection, computational, and perturbation metrics.
+3. `research_questions.md` `[UPDATED]` — Literature-grounded research questions, formal hypotheses H1–H4, independent/dependent variables, and epistemic taxonomy.
+4. `experiment_plan.md` `[UPDATED]` — Updated experiment suites (A1–A3, B1–B5, Perturbations C1–C3, Ablations D1–D4, Hardware Suite E).
+5. `decision_log.md` `[UPDATED]` — Documented decisions DEC-014 to DEC-019.
+6. `devlog.md` `[UPDATED]` — Documented Milestone 3 achievements and handoffs.
+
+### 3. Key Decisions Made
+- **Decision DEC-014:** Selected A1 (BM25 keyword index) and A2 (Pretrained CLIP ViT-B/32 zero-shot) as retrieval baselines, with A3 evaluated as an ablation.
+- **Decision DEC-015:** Selected B1 (Pixel Diff), B2 (SSIM), B3 (CVA), B4 (`FC-Siam-diff`), and B5 (Quality-Gated) as change detection baselines.
+- **Decision DEC-016:** Primary metrics standardized: Caption-to-Own-Image R@K and MRR for retrieval; F1-score and IoU on changed class for change detection. Overall Accuracy formally deprecated.
+- **Decision DEC-017:** Enforced leakage-safe validation-calibrated frozen thresholds and unsupervised Otsu thresholding.
+- **Decision DEC-018:** Formulated 4 literature-grounded perturbation stress tests (illumination, blur, misregistration jitter, occlusion).
+- **Decision DEC-019:** Formally classified the proposed quality-aware change detection method as an **ADAPTATION & COMBINATION** with no unsupported novelty claims.
+
+### 4. Work Deliberately NOT Performed in Milestone 3
+> [!IMPORTANT]
+> **Strict Non-Implementation Declaration:**  
+> **No machine learning models, training scripts, FAISS indexes, or application services were implemented in M3.**
+> Specifically:
+> - No CLIP model weights were downloaded or instantiated.
+> - No FAISS vector search index was built.
+> - No classical or learned change detection code (B1–B5) was executed.
+> - No training loops or inference scripts were written.
+> - No FastAPI routes or frontend components were implemented.
+> - Milestone 3 was strictly confined to research design, literature review, citation auditing, mathematical formalization, and metric definition.
+
+### 5. Handoff to Subsequent Milestones
+- **To Milestone 4 (Semantic Retrieval Baseline & Implementation — Owner: Rahul):**
+  - Implement A1 (BM25 / inverted index) and A2 (Pretrained CLIP ViT-B/32 with FAISS `IndexFlatIP`).
+  - Follow the **Caption-to-Own-Image** evaluation protocol and formal $R@K$ / MRR metrics specified in `metrics.md` Section 1.
+  - Test on the 1,093 held-out test scenes (5,465 queries) from `data/splits/rsicd/rsicd_splits.json`.
+- **To Milestone 5 (Classical Change Detection Baselines — Owner: Tanishka Mukhi):**
+  - Implement B1 (Absolute Pixel Differencing), B2 (SSIM Dissimilarity), and B3 (Change Vector Analysis).
+  - Strictly adhere to `metrics.md` Section 3: Calibrate optimal threshold $\tau^*$ on the 64 validation scenes, freeze $\tau^*$, and evaluate on the 128 test scenes from `data/splits/levir_cd/levir_splits.json`.
+  - Report F1-score and IoU on the changed class. Disregard Overall Accuracy.
+- **To Milestone 6 (False-Alarm Suppression & Diagnostic Evaluation — Owner: Adishri Abro):**
+  - Implement controlled perturbation generators (`EXP-PERT-01` to `03`) and diagnostic quality gating (`EXP-CD-05`).
+  - Benchmark FPAF and relative F1 degradation ($\Delta F_1$) across classical vs. learned models.
+
+---
+
 ## [2026-09-15] — Milestone 2: Dataset Acquisition, Verification & Preprocessing Pipeline
 
 **Milestone Identifier:** M2  

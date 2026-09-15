@@ -4,7 +4,7 @@
 
 [![Project Track](https://img.shields.io/badge/Academic%20Track-Final--Year%20B.Tech%20CSE%20(AI%2FML)-blue)](#)
 [![Execution Platform](https://img.shields.io/badge/Compute-Commodity%20CPU%20Only-brightgreen)](#)
-[![Status](https://img.shields.io/badge/Milestone-M1%20Completed-success)](#)
+[![Status](https://img.shields.io/badge/Milestones-M1,%20M2,%20M3%20Completed-success)](#)
 
 ---
 
@@ -37,23 +37,30 @@ The project is organized into 15 structured milestones, with 5 primary milestone
 
 ---
 
-## 4. Documentation Index
+## 4. Research Documentation Index
 
-The foundation of the project is documented in detail in the following research records:
+The research foundation is documented in detail across the following records:
 
-- [`PRD.md`](./PRD.md) — Product / Research Requirements Document (problem statement, requirements, constraints, system boundaries, candidate datasets).
-- [`research_questions.md`](./research_questions.md) — Formal research problem, provisional research questions (RQ1–RQ4), provisional hypotheses (H1–H4), and variables.
-- [`architecture.md`](./architecture.md) — 8-layer decoupled modular architecture, data flows, CPU execution strategies, and milestone dependencies.
+- [`literature_review.md`](./literature_review.md) — Comprehensive literature review, citation audit, research gaps, novelty classification, and verified references.
+- [`metrics.md`](./metrics.md) — Formal mathematical and operational specifications for retrieval, change-detection, computational, and perturbation metrics.
+- [`research_questions.md`](./research_questions.md) — Formal research problem, research questions (RQ1–RQ4), formal hypotheses (H1–H4), and variables.
 - [`experiment_plan.md`](./experiment_plan.md) — Empirical experimental protocols, candidate models, false-alarm perturbation tests, and ablation studies.
-- [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-007).
+- [`data_card.md`](./data_card.md) — Authoritative data cards for LEVIR-CD and RSICD datasets.
+- [`PRD.md`](./PRD.md) — Product / Research Requirements Document (problem statement, requirements, constraints, system boundaries).
+- [`architecture.md`](./architecture.md) — 8-layer decoupled modular architecture, data flows, CPU execution strategies, and milestone dependencies.
+- [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-019).
 - [`devlog.md`](./devlog.md) — Chronological engineering and research progress log.
 
 ---
 
 ## 5. Current Project Status
 
-- **Completed:** Milestone 1 — Research Definition & System Architecture (Owner: Rahul).
-- **Upcoming:**
+- **Completed:**
+  - **Milestone 1:** Research Definition & System Architecture (Owner: Rahul).
   - **Milestone 2:** Dataset Acquisition, Verification & Preprocessing Pipeline (Owner: Tanishka Mukhi).
   - **Milestone 3:** Comprehensive Literature Review, Mathematical Baseline Formulation & Metric Formalization (Owner: Adishri Abro).
-- **Current State:** Research foundation established. No model training, API code, or application code has been implemented yet.
+- **Upcoming:**
+  - **Milestone 4:** Semantic Retrieval Baseline Implementation (Owner: Rahul).
+  - **Milestone 5:** Classical Change Detection Baselines Implementation (Owner: Tanishka Mukhi).
+  - **Milestone 6:** Evaluation Framework & Diagnostic Benchmarking Suite (Owner: Adishri Abro).
+- **Current State:** Datasets verified; complete literature foundation, formal mathematical metrics, and leakage-safe experiment plans established. Ready for ML baseline implementation in M4, M5, and M6.

@@ -207,3 +207,107 @@ This document records the foundational research, architectural, and engineering 
 - **Rationale & Trade-offs:** Reconstructing corrupted pixels or training on noise invalidates the empirical integrity of the study. Automatic downloading risks network instability, API breakage, or downloading another unverified archive. Manual provisioning with automated objective validation guarantees that only authentic, researcher-verified satellite imagery enters the experimental pipeline. Raw data remains strictly outside version control.
 - **Status:** Confirmed
 - **Evidence / Source:** Visual inspection of corrupted artifacts; research data integrity guidelines.
+
+---
+
+### DEC-014: Selection of Semantic Retrieval Baselines (A1, A2, and A3 as Ablation)
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Literature review indicates that comparing neural vision-language models requires both a non-neural baseline and a standardized pretrained dual-encoder baseline. We needed to decide on the exact retrieval baselines to implement in M4.
+- **Alternatives Considered:**
+  1. Train a cross-modal transformer from scratch on RSICD.
+  2. Use only zero-shot CLIP without a non-neural baseline.
+  3. Establish A1 (Classical BM25 / Inverted Index on text captions) and A2 (Pretrained CLIP ViT-B/32 zero-shot dual-encoder with FAISS `IndexFlatIP`), with A3 (Domain Prompt Ensembling) evaluated as an ablation study rather than a distinct heavyweight architecture.
+- **Decision Made:** Adopt A1 (BM25 / Inverted Index) and A2 (Zero-shot CLIP ViT-B/32 with FAISS inner-product index) as the primary retrieval baselines. Treat A3 (prompt engineering / ensembling) as an ablation test suite.
+- **Rationale & Trade-offs:** Training from scratch violates the CPU budget and is scientifically unneeded when investigating transferability. A1 establishes whether semantic vector retrieval genuinely beats exact keyword matching, and A2 directly tests Hypothesis H1 under reproducible conditions.
+- **Status:** Confirmed
+- **Evidence / Source:** Radford et al. (ICML 2021); Lu et al. (IEEE TGRS 2018); `literature_review.md` Section 2.
+
+---
+
+### DEC-015: Selection of Change Detection Baselines (B1, B2, B3, B4, and B5)
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Selecting an appropriate set of classical and lightweight learned change-detection baselines that are mathematically rigorous, reproducible, and feasible on commodity CPUs.
+- **Alternatives Considered:**
+  1. Benchmark only heavy vision transformers (e.g., BIT, ChangeFormer).
+  2. Implement only classical pixel differencing and skip learned models.
+  3. Formulate a 5-tier baseline suite:
+     - B1: Absolute Pixel Differencing (Singh, 1989)
+     - B2: Structural Similarity Index Measure (SSIM) Differencing (Wang et al., 2004)
+     - B3: Change Vector Analysis (CVA) (Malila, 1980)
+     - B4: Fully Convolutional Siamese Difference Network (`FC-Siam-diff` / Tiny-UNet, Daudt et al., 2018)
+     - B5: Lightweight Diagnostic Quality-Gated Model (Hypothesis H3)
+- **Decision Made:** Formally select B1, B2, B3, B4, and B5 as our benchmark suite. Large transformer architectures (BIT, ChangeFormer) will be retained as literature context only, due to excessive CPU latency and memory footprint.
+- **Rationale & Trade-offs:** This spans the full spectrum from raw radiometric differencing (B1) to local structural variance (B2), spectral displacement (B3), hierarchical learned convolutions (B4), and false-alarm suppression gating (B5), directly addressing RQ2, RQ3, and RQ4.
+- **Status:** Confirmed
+- **Evidence / Source:** Singh (1989); Wang et al. (2004); Malila (1980); Daudt et al. (2018); Chen & Shi (2020); `literature_review.md` Sections 4 & 5.
+
+---
+
+### DEC-016: Formalized Standard Evaluation Metrics & Class-Imbalance Deprecation Policy
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Defining the exact, mathematically unambiguous evaluation metrics for cross-modal retrieval and bi-temporal change detection, while addressing severe class imbalance in LEVIR-CD.
+- **Alternatives Considered:**
+  1. Use Overall Accuracy (OA) as the primary change-detection metric.
+  2. Use F1-score and IoU on the changed class as primary metrics, while explicitly deprecating Overall Accuracy for model selection.
+  3. For retrieval, mix category-matching and caption-matching without distinction.
+- **Decision Made:**
+  - For Change Detection: Formally establish F1-score and IoU (Jaccard index) on the changed class as primary metrics. Precision and Recall will be reported alongside them. Overall Accuracy is strictly deprecated as a model selection criterion because non-change pixels represent 95.349% of LEVIR-CD (a dummy zero-change predictor trivially scores 95.35% OA).
+  - For Semantic Retrieval: Formally designate Caption-to-Own-Image Recall@K ($K \in \{1, 5, 10\}$) and MRR across the 1,093 held-out test scenes (5,465 queries) as the primary benchmark, with category-level Precision@K reported as secondary diagnostic context.
+- **Rationale & Trade-offs:** Prevents deceptive accuracy inflation on imbalanced datasets and aligns directly with established remote-sensing benchmarking standards.
+- **Status:** Confirmed
+- **Evidence / Source:** Lu et al. (2018); Chen & Shi (2020); `metrics.md` Section 2.3.
+
+---
+
+### DEC-017: Leakage-Safe Threshold Calibration Policy
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Classical change-detection methods (B1, B2, B3) output continuous difference maps that require thresholding. Many literature studies search for the best threshold directly on the test set, causing severe data leakage.
+- **Alternatives Considered:**
+  1. Grid search for optimal threshold directly on the test set (standard in some informal studies, but invalid).
+  2. Use only a fixed arbitrary constant threshold (e.g., $\tau = 0.5$).
+  3. Implement two leakage-safe policies:
+     - Policy A (Supervised Calibration): Grid search $\tau \in [0.01, 0.99]$ to maximize F1 strictly on the 64 validation scenes; freeze $\tau^*$, then apply to the 128 test scenes.
+     - Policy B (Unsupervised): Compute scene-adaptive Otsu thresholding directly from histogram variance.
+- **Decision Made:** Adopt Policy A (validation-calibrated frozen threshold) as the primary protocol for all classical comparisons, and Policy B (unsupervised Otsu) as a secondary zero-shot baseline. Test-set threshold tuning is strictly prohibited.
+- **Rationale & Trade-offs:** Guarantees absolute isolation of the test split and ensures reproducible, scientifically honest benchmarking.
+- **Status:** Confirmed
+- **Evidence / Source:** Otsu (1979); standard machine learning evaluation integrity rules; `metrics.md` Section 3.
+
+---
+
+### DEC-018: Controlled Perturbation Robustness Test Suite
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Evaluating false-alarm resilience (RQ3) requires testing models under controlled, reproducible environmental confounders rather than relying solely on clean benchmark imagery.
+- **Alternatives Considered:**
+  1. Test only on clean benchmark pairs without perturbations.
+  2. Apply arbitrary, unscientific image distortions (e.g., cartoon filters, extreme color inversion).
+  3. Apply 4 literature-grounded physical confounders:
+     - Global illumination scaling: $I_2' = \alpha I_2 + \beta$ ($\alpha \in [0.7, 1.3]$).
+     - Spatial blur / atmospheric defocus: Gaussian blur kernel ($k \in \{3, 5, 7\}, \sigma \in [1.0, 2.0]$).
+     - Geometric misregistration jitter: Sub-pixel and pixel translations ($\Delta x, \Delta y \in \{0.5, 1.0, 2.0\}$ pixels).
+     - Synthetic localized occlusion / shadow artifacts.
+- **Decision Made:** Implement the 4 literature-grounded perturbation generators. Measure performance using Relative F1 Degradation ($\Delta F_1$) and False Positive Amplification Factor (FPAF).
+- **Rationale & Trade-offs:** Isolates specific environmental failure modes and provides quantitative evidence for whether learned representations or quality-gating layers resist non-ground confounders.
+- **Status:** Confirmed
+- **Evidence / Source:** Hall et al. (1991); Bovolo & Bruzzone (2007); `literature_review.md` Section 6; `metrics.md` Section 5.
+
+---
+
+### DEC-019: Novelty and Research-Gap Classification of Proposed Quality-Aware Method
+- **Date:** 2026-09-15
+- **Owner:** Adishri Abro (Literature & Evaluation Lead)
+- **Context:** Determining whether the project's proposed quality-aware change-detection architecture is a fundamentally novel theoretical invention or an adaptation of existing principles, to avoid making unsupported academic claims.
+- **Alternatives Considered:**
+  1. Claim foundational novelty for quality-aware change scoring.
+  2. Abandon the quality-aware investigation entirely because prior art exists.
+  3. Classify the method as an **ADAPTATION & COMBINATION**: acknowledge that radiometric normalization, uncertainty estimation, and confidence maps are established in remote sensing, while positioning our specific contribution as a lightweight, CPU-constrained diagnostic gating pipeline evaluated under controlled perturbation stress tests.
+- **Decision Made:** Formally classify the proposed method as an **ADAPTATION & COMBINATION**. Remove any claims of foundational theoretical novelty from all project documentation. The research contribution is explicitly defined as an empirical investigation of lightweight diagnostic gating for false-alarm suppression under CPU constraints.
+- **Rationale & Trade-offs:** Scientific honesty and intellectual rigor are paramount. Acknowledging established prior art strengthens the academic credibility of the research.
+- **Status:** Confirmed
+- **Evidence / Source:** Comprehensive literature audit (`literature_review.md` Sections 7, 11, and 12).
+

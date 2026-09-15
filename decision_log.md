@@ -119,3 +119,91 @@ This document records the foundational research, architectural, and engineering 
 - **Rationale & Trade-offs:** Provides equitable workload distribution, accountability, and clear milestone dependency gates.
 - **Status:** Confirmed
 - **Evidence / Source:** Team project management agreement.
+
+---
+
+### DEC-008: Strict Git Exclusion for Large Raw and Processed Datasets
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** Deciding how to store and track raw imagery (~10 GB for LEVIR-CD, ~1.5 GB for RSICD) and extracted patch crops in version control.
+- **Alternatives Considered:**
+  1. Commit subsets directly to Git repository.
+  2. Use Git LFS (Large File Storage) with cloud hosting.
+  3. Strictly exclude `data/raw/*` and `data/processed/*` from Git while tracking directory structure (`.gitkeep`), split manifests (`data/splits/*.json`), and metadata (`data/metadata/*`).
+- **Decision Made:** Exclude all raw and processed image binaries from Git via `.gitignore`. Provide automated download/fixture scripts and structured JSON/CSV metadata in version control.
+- **Rationale & Trade-offs:** Prevents repository bloat, clone timeouts, and Git LFS quota issues. Guarantees that student laptops can clone the repository instantly while reproducing data preprocessing deterministically.
+- **Status:** Confirmed
+- **Evidence / Source:** Open-source remote sensing repository management standards.
+
+---
+
+### DEC-009: Configurable Patch Extraction with Leakage-Safe Scene-First Partitioning
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** Managing high-resolution satellite imagery ($1024 \times 1024$) under CPU constraints while preventing data leakage across train, val, and test partitions.
+- **Alternatives Considered:**
+  1. Tile all raw imagery into patches first, then randomly shuffle and split patches.
+  2. Partition parent scene pairs into splits first, then extract patches independently within each partition.
+  3. Resize entire $1024 \times 1024$ scenes down to $256 \times 256$ without patching.
+- **Decision Made:** Partition parent scene pairs into train/val/test splits FIRST, then extract patches. Support configurable patch size (defaulting to 256 with parameter `patch_size`), stride, and padding modes.
+- **Rationale & Trade-offs:** Shuffling patches prior to splitting causes severe spatial data leakage (adjacent patches from the same scene sharing identical geographic context across train and test sets). Resizing destroys critical small-building structural features. Scene-first splitting completely eliminates spatial leakage while keeping memory below 10 MB per patch crop.
+- **Status:** Confirmed
+- **Evidence / Source:** Standard spatial cross-validation literature in remote sensing (Chen & Shi, 2020; STANet).
+
+---
+
+### DEC-010: Adoption of Authoritative Official Splits for LEVIR-CD and RSICD
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** Choosing whether to invent custom random splits or adopt established literature benchmarks for evaluation.
+- **Alternatives Considered:**
+  1. Generate random custom splits across all data.
+  2. Adopt official benchmark partitions (Chen & Shi 2020: 445 train / 64 val / 128 test for LEVIR-CD; standard Karpathy JSON split for RSICD).
+- **Decision Made:** Adopt the authoritative official benchmark splits for primary model comparisons, with `SplitManager` available for secondary k-fold validation if required.
+- **Rationale & Trade-offs:** Enables direct, scientifically valid comparisons with published remote sensing papers without claiming non-standard baselines.
+- **Status:** Confirmed
+- **Evidence / Source:** Chen & Shi (Remote Sensing 2020); Lu et al. (IEEE TGRS 2018).
+
+---
+
+### DEC-011: Strict Stem-Based Temporal Pair Association
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** Pairing pre-change ($T_1$) and post-change ($T_2$) images and change masks in LEVIR-CD.
+- **Alternatives Considered:**
+  1. Sort directory file listings independently and pair by index.
+  2. Strictly associate $T_1$, $T_2$, and label masks by identical filename stems (e.g. `train_0012.png`).
+- **Decision Made:** Enforce strict filename stem matching across `A/`, `B/`, and `label/` subfolders; reject any pair where stems do not match or a component is missing.
+- **Rationale & Trade-offs:** Independent sorting is fragile to differing OS filesystem collation orders and missing files, which silently corrupts temporal pair alignment. Stem matching guarantees zero pairing corruption.
+- **Status:** Confirmed
+- **Evidence / Source:** Data integrity verification principles.
+
+---
+
+### DEC-012: Deterministic Synthetic Test Fixtures for Zero-Download CI & Unit Testing
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** Testing data loaders, patch extractors, verifiers, and metadata builders on student laptops without requiring team members to immediately download the full 10 GB archive.
+- **Alternatives Considered:**
+  1. Require full 10 GB download before tests can be executed.
+  2. Mock filesystem objects using `unittest.mock`.
+  3. Generate deterministic synthetic image and annotation fixtures (`tests/fixtures/`) matching exact LEVIR-CD and RSICD formats.
+- **Decision Made:** Implement `scripts/download_datasets.py --create-fixtures` to generate lightweight, deterministic image and annotation fixtures.
+- **Rationale & Trade-offs:** Allows 100% test coverage and hardware profiling locally within seconds without network dependencies, while keeping mock-free real image processing intact.
+- **Status:** Confirmed
+- **Evidence / Source:** Software testing best practices for scientific computing.
+
+---
+
+### DEC-013: Reset Corrupted RSICD Artifacts and Require Manual Dataset Provisioning
+- **Date:** 2026-09-15
+- **Owner:** Tanishka Mukhi
+- **Context:** The previously available local RSICD image files were corrupted (exhibiting random RGB noise rather than authentic remote sensing imagery). The corruption affected the artifacts broadly, rendering them unusable for research experiments.
+- **Alternatives Considered:**
+  1. Attempt algorithmic image reconstruction or denoising.
+  2. Implement an automatic network fetcher to download an external archive.
+  3. Safely purge corrupted artifacts, disable automatic downloads, and establish an objective validation pipeline for researcher-supplied dataset provisioning.
+- **Decision Made:** Remove all corrupted RSICD artifacts from the repository, explicitly disable automatic dataset downloading, and establish a strict manual provisioning workflow. The researcher will supply the valid RSICD dataset into `data/raw/rsicd/`, where it will be objectively validated via `DatasetVerifier` before any downstream experiments proceed.
+- **Rationale & Trade-offs:** Reconstructing corrupted pixels or training on noise invalidates the empirical integrity of the study. Automatic downloading risks network instability, API breakage, or downloading another unverified archive. Manual provisioning with automated objective validation guarantees that only authentic, researcher-verified satellite imagery enters the experimental pipeline. Raw data remains strictly outside version control.
+- **Status:** Confirmed
+- **Evidence / Source:** Visual inspection of corrupted artifacts; research data integrity guidelines.

@@ -1,0 +1,52 @@
+{
+  "dataset_name": "RSICD (Image Directory)",
+  "directory": "/Users/rahulmanchanda/Desktop/AI-Driven-Satellite-Image-Semantic-Search-and-Temporal-Change-Detection-System/data/raw/rsicd/images",
+  "total_checked": 10921,
+  "valid_count": 10921,
+  "invalid_count": 0,
+  "duplicate_hash_count": 0,
+  "dimensions_distribution": {
+    "224x224": 10921
+  },
+  "modes_distribution": {
+    "RGB": 10921
+  },
+  "categories_distribution": {
+    "unclassified": 921,
+    "airport": 360,
+    "bareland": 310,
+    "baseballfield": 220,
+    "beach": 400,
+    "bridge": 360,
+    "center": 260,
+    "church": 240,
+    "commercial": 350,
+    "denseresidential": 410,
+    "desert": 300,
+    "farmland": 370,
+    "forest": 250,
+    "industrial": 390,
+    "meadow": 280,
+    "mediumresidential": 290,
+    "mountain": 340,
+    "park": 350,
+    "parking": 390,
+    "playground": 370,
+    "pond": 420,
+    "port": 380,
+    "railwaystation": 260,
+    "resort": 290,
+    "river": 410,
+    "school": 300,
+    "sparseresidential": 300,
+    "square": 330,
+    "stadium": 290,
+    "storagetanks": 360,
+    "viaduct": 420
+  },
+  "corrupted_files": [],
+  "dimension_mismatches": [],
+  "channel_mismatches": [],
+  "duplicates_by_hash": {},
+  "is_clean": true
+}

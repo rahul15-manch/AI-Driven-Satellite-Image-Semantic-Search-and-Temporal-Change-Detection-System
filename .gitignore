@@ -216,3 +216,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Dataset storage (Prevent large image archives from entering Git)
+data/raw/*
+!data/raw/.gitkeep
+data/raw/rsicd/*
+!data/raw/rsicd/.gitkeep
+data/raw/levir_cd/*
+!data/raw/levir_cd/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/processed/rsicd/*
+!data/processed/rsicd/.gitkeep
+data/processed/levir_cd/*
+!data/processed/levir_cd/.gitkeep
+
+# Large archives and binary weights
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.h5
+*.pth
+*.pt
+*.bin
+*.onnx

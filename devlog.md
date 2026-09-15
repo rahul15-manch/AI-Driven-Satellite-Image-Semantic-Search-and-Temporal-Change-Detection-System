@@ -4,6 +4,112 @@ All engineering activities, architectural milestones, and experimental progress 
 
 ---
 
+## [2026-09-15] — Milestone 2: Dataset Acquisition, Verification & Preprocessing Pipeline
+
+**Milestone Identifier:** M2  
+**Milestone Owner:** Tanishka Mukhi  
+**Collaborators:** Rahul (Team Lead), Adishri Abro (Literature & Evaluation)  
+**Status:** Completed & Empirically Verified on Real Datasets  
+
+### 1. Milestone Objectives Achieved
+- **User-Provided Dataset Integration:**
+  - **RSICD Integration:** Successfully extracted all **10,921 images** and **54,605 captions** from user-provided CSV archives into `data/raw/rsicd/images/` and `data/raw/rsicd/dataset_rsicd.json`. Every single image byte stream was verified with zero corrupted files and zero duplicate hashes.
+  - **LEVIR-CD Integration:** Integrated all **637 official bitemporal pairs** ($1024 \times 1024$ optical scenes) into `data/raw/levir_cd/` across `train/` (445), `val/` (64), and `test/` (128) partitions.
+- **Corrupted Artifact Purge & Reset:** Safely deleted previous synthetic noise artifacts (e.g., `airport_02.jpg`), ensuring no synthetic noise exists in the data pipeline.
+- **Clean Standardized Directory Hierarchy:**
+  ```text
+  data/
+  ├── raw/ (rsicd/, levir_cd/)
+  ├── processed/ (rsicd/, levir_cd/)
+  ├── metadata/ (rsicd/, levir_cd/)
+  └── splits/ (rsicd/, levir_cd/)
+  ```
+- **Factual Dataset Statistics Computation:**
+  - RSICD: 10,921 images, 100% valid $224 \times 224$ RGB, 31 categories, 8,734 train / 1,094 val / 1,093 test split.
+  - LEVIR-CD: 637 scenes, 667,942,912 total pixels, exactly **31,066,643 changed pixels (4.651%)** measured across all pairs (train: 4.589%, val: 4.197%, test: 5.094%).
+- **Visual Sanity Confirmation:** Rendered 16-sample contact sheet to `data/processed/rsicd/sanity_check_grid.png`. Visual inspection confirmed authentic satellite imagery (airports, residential, coastal, desert, industrial, waterbodies) rather than noise.
+- **Metadata & Splits Persistence:**
+  - Generated machine-readable manifests: `data/metadata/rsicd/rsicd_metadata.json`, `rsicd_metadata.csv`, `data/metadata/levir_cd/levir_metadata.json`, and `levir_metadata.csv`.
+  - Saved deterministic split manifests: `data/splits/rsicd/rsicd_splits.json` and `data/splits/levir_cd/levir_splits.json`.
+- **Test Suite Status:** 24 unit and integration tests passing in 0.80s (100% pass rate).
+
+### 2. Datasets Investigated & Verification Summary
+- **LEVIR-CD:**
+  - *Authors & Source:* Hao Chen and Zhenwei Shi, LEVIR Lab, Beihang University; *Remote Sensing* (MDPI), 2020.
+  - *Properties Locally Measured:* 637 bitemporal pairs, $1024 \times 1024$ pixels, 3 channels RGB, 4.651% changed pixel ratio.
+  - *Status:* `[LOCALLY-MEASURED & VALIDATED]`.
+- **RSICD:**
+  - *Authors & Source:* Xiaoqiang Lu, Binqiang Wang, Xiangtao Zheng, and Xuelong Li; *IEEE TGRS*, 2018.
+  - *Properties Locally Measured:* 10,921 images, $224 \times 224$ pixels, 3 channels RGB, 54,605 captions, 0 duplicate hashes.
+  - *Status:* `[LOCALLY-MEASURED & VALIDATED]`.
+
+### 3. Files Created / Modified
+- `data_card.md` — Authoritative data cards for LEVIR-CD and RSICD with explicit epistemic labels.
+- `data/README.md` — Dataset placement instructions, verification commands, and raw data protection policy.
+- `requirements.txt` — Minimal pinned dependencies.
+- `.gitignore` — Excludes `data/raw/*` and `data/processed/*` binaries while preserving directory structure.
+- `src/data/dataset_verifier.py` — Image decoding, SHA-256 duplicate hashing, and RSICD directory verification.
+- `src/data/verify_rsicd.py` — Dedicated CLI verification tool for user-supplied RSICD images.
+- `src/data/inspect_rsicd.py` — Visual sanity check and contact sheet generator.
+- `src/data/metadata_builder.py` — Automated metadata manifest generator with SHA-256 hashing.
+- `src/data/patch_extractor.py` — Configurable patch extractor with spatial leakage prevention.
+- `src/data/split_manager.py` — Leakage-safe train/val/test splitting and manifest persistence.
+- `src/data/levir_loader.py` — Bi-temporal dataset loader and class distribution profiler.
+- `src/data/rsicd_loader.py` — RSICD loader and category parser.
+- `scripts/download_datasets.py` — Provenance guide with zero automated downloads.
+- `tests/test_dataset_verifier.py` — 8 unit tests covering corrupted, truncated, zero-byte, and duplicate cases.
+- `tests/test_metadata_builder.py` — Unit tests for metadata serialization and directory extraction.
+- `tests/test_rsicd_loader.py` — Dynamic tmp_path fixture integration tests for RSICD loading.
+- `tests/test_pipeline.py` — End-to-end integration test (raw -> validation -> metadata -> preprocessing).
+- `decision_log.md` — Added decisions DEC-008 through DEC-013.
+- `devlog.md` — Updated development log entry.
+- `tests/test_split_manager.py` — Unit tests for split determinism and leakage detection.
+- `tests/test_levir_loader.py` — Integration tests for LEVIR dataset loading.
+- `tests/test_rsicd_loader.py` — Integration tests for RSICD dataset loading.
+- `tests/test_metadata_builder.py` — Unit tests for metadata serialization.
+- `decision_log.md` — Added decisions DEC-008 through DEC-012.
+- `devlog.md` — Added this M2 milestone entry.
+
+### 4. Empirical Resource & Throughput Measurements (Locally Measured)
+- **Patch Extraction Throughput (CPU):** Extracting sixteen $256 \times 256$ patches from a $1024 \times 1024$ bi-temporal pair ($T_1, T_2, \text{label}$) and writing to disk took **132.06 ms** on standard CPU.
+- **Peak Operational Memory:** Peak heap allocation during patch extraction was **9.46 MB**, well below our 8 GB ceiling.
+- **Projected Full-Dataset Tiling Time:** Estimated at $\approx 637 \text{ scenes} \times 0.14\text{ s} \approx 89\text{ seconds}$ on quad-core CPU.
+- **Storage Profile:** Local test fixtures require $< 5\text{ MB}$; full LEVIR-CD raw requires ~10 GB; processed patches require ~3.5 GB. Host system has 83 GB available.
+
+### 5. Key Decisions Made
+- **Decision DEC-008:** Excluded raw and processed image binaries from Git; tracked only manifests and code.
+- **Decision DEC-009:** Enforced scene-first partitioning before patch extraction to prevent spatial cross-validation leakage.
+- **Decision DEC-010:** Adopted authoritative official splits (Chen & Shi for LEVIR; Karpathy for RSICD).
+- **Decision DEC-011:** Enforced strict stem-based temporal pair association.
+- **Decision DEC-012:** Implemented deterministic synthetic test fixtures for mock-free offline testing.
+
+### 6. Working Assumptions Introduced
+- **Assumption 1:** 256x256 non-overlapping patches (stride 256) provide a balanced spatial context for building changes under CPU memory constraints (configurable via `patch_size`).
+- **Assumption 2:** Standard ImageNet channel normalization coefficients are appropriate as the default optical baseline for both datasets.
+
+### 7. Unresolved Questions & Risks for Future Milestones
+- **LEVIR-CD Scene Diversity:** LEVIR-CD is heavily focused on building changes with limited seasonal/atmospheric variation; Milestone 9 / Milestone 11 will need synthetic perturbation tests to stress-test false alarms.
+- **RSICD Caption Quality:** Some RSICD captions are repetitive; Milestone 4 must examine whether repeated captions impact Precision@K ranking metrics.
+
+### 8. Work Deliberately NOT Performed in Milestone 2
+> [!IMPORTANT]
+> **Strict Non-Implementation Declaration:**  
+> **No machine learning models, change detection algorithms, or retrieval indexing have been implemented.**
+> Specifically:
+> - No CLIP models or text encoders were downloaded or initialized.
+> - No FAISS indices were created.
+> - No Siamese CNN or difference thresholding algorithms were implemented.
+> - No FastAPI routes or frontend components were implemented.
+> - Milestone 2 was strictly confined to dataset verification, loading, patching, integrity checking, and preprocessing pipelines.
+
+### 9. Next Milestones & Handoff
+- **To Milestone 3 (Owner: Adishri Abro):** Literature review, baseline formulation, and metric definitions can now reference verified dataset structures and mathematical properties documented in `data_card.md`.
+- **To Milestone 4 (Owner: Rahul):** Semantic retrieval baseline can directly consume `RSICDDataset` and `SplitManager` manifests.
+- **To Milestone 5 (Owner: Tanishka Mukhi):** Classical change detection baselines can directly consume `LEVIRDataset` and `PatchExtractor`.
+- **To Milestone 6 (Owner: Adishri Abro):** Evaluation framework can build upon validated split manifests and class balance calculations.
+
+---
+
 ## [2026-09-15] — Milestone 1: Research Definition & System Architecture
 
 **Milestone Identifier:** M1  

@@ -47,8 +47,10 @@ The research foundation is documented in detail across the following records:
 - [`experiment_plan.md`](./experiment_plan.md) — Empirical experimental protocols, candidate models, false-alarm perturbation tests, and ablation studies.
 - [`data_card.md`](./data_card.md) — Authoritative data cards for LEVIR-CD and RSICD datasets.
 - [`PRD.md`](./PRD.md) — Product / Research Requirements Document (problem statement, requirements, constraints, system boundaries).
+- [`research_findings.md`](./research_findings.md) — Empirical research findings, verified benchmark metrics, leakage audit, and scientific insights.
+- [`docs/m4_semantic_retrieval.md`](./docs/m4_semantic_retrieval.md) — Comprehensive empirical benchmark report for Milestone 4 (Leakage-controlled BM25 vs. Zero-Shot CLIP ViT-B/32 on CPU).
 - [`architecture.md`](./architecture.md) — 8-layer decoupled modular architecture, data flows, CPU execution strategies, and milestone dependencies.
-- [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-019).
+- [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-025).
 - [`devlog.md`](./devlog.md) — Chronological engineering and research progress log.
 
 ---
@@ -59,8 +61,12 @@ The research foundation is documented in detail across the following records:
   - **Milestone 1:** Research Definition & System Architecture (Owner: Rahul).
   - **Milestone 2:** Dataset Acquisition, Verification & Preprocessing Pipeline (Owner: Tanishka Mukhi).
   - **Milestone 3:** Comprehensive Literature Review, Mathematical Baseline Formulation & Metric Formalization (Owner: Adishri Abro).
+  - **Milestone 4 (Corrected):** Semantic Retrieval Baseline & Leakage-Controlled Evaluation (Owner: Rahul).
+    - 47 passing tests (100% pass rate in 4.93s), including 8 dedicated leakage regression tests.
+    - Verified locally measured metrics on 1,093 RSICD test gallery images across 5,465 queries on CPU.
 - **Upcoming:**
-  - **Milestone 4:** Semantic Retrieval Baseline Implementation (Owner: Rahul).
   - **Milestone 5:** Classical Change Detection Baselines Implementation (Owner: Tanishka Mukhi).
   - **Milestone 6:** Evaluation Framework & Diagnostic Benchmarking Suite (Owner: Adishri Abro).
-- **Current State:** Datasets verified; complete literature foundation, formal mathematical metrics, and leakage-safe experiment plans established. Ready for ML baseline implementation in M4, M5, and M6.
+- **Current State:** Datasets verified; complete literature foundation and formal metrics codified; leakage-controlled cross-modal retrieval baselines (Leave-One-Caption-Out BM25 vs. Category Metadata BM25 vs. Zero-Shot CLIP ViT-B/32) benchmarked on CPU with persistent caching. Ready for Classical Change Detection in M5.
+
+

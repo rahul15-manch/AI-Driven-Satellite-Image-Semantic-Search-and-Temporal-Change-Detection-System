@@ -4,6 +4,86 @@ All engineering activities, architectural milestones, and experimental progress 
 
 ---
 
+## [2026-09-15] — Milestone 4 Corrective Task: Leakage-Controlled Semantic Retrieval Evaluation
+
+**Milestone Identifier:** M4 Corrective  
+**Milestone Owner:** Rahul (Team Lead)  
+**Collaborators:** Tanishka Mukhi (Dataset & Architecture), Adishri Abro (Literature & Evaluation)  
+**Status:** Completed, Corrected, and Fully Re-Evaluated on CPU Hardware  
+
+### 1. Objectives Achieved
+- **Leakage Problem Identification:** Diagnosed target-query text overlap in legacy BM25 evaluation ($D_i = \bigcup_{k=1}^5 C_{ik}$), where query text $q = C_{ik}$ was present inside the target document, artificially inflating BM25 to 85.65% R@1.
+- **Implementation of Mode A (Leave-One-Caption-Out BM25):** For every query $q = C_{ik}$, the target document $D_i$ dynamically retains only the four remaining captions ($\bigcup_{j \ne k} C_{ij}$) and strictly excludes $q$. Non-target images retain all 5 captions.
+- **Implementation of Mode B (Category Metadata BM25):** Added an auxiliary control indexing only category labels (e.g., "airport", "parking") with zero test captions in the gallery.
+- **Archival of Legacy Baseline:** Preserved original leaky results under `experiments/results/m4/legacy_caption_indexed/` with clear diagnostic labelling (`DEC-025`).
+- **Full Empirical Re-evaluation `[LOCALLY MEASURED]`:**
+  - **BM25 (Leave-One-Caption-Out, Mode A):** R@1 = **42.12%**, R@5 = **60.81%**, R@10 = **67.87%**, MRR = **0.5112**, Latency = **1.49 ms**, Peak RAM = **279.7 MB**.
+  - **BM25 (Category Metadata, Mode B):** R@1 = **1.50%**, R@5 = **7.30%**, R@10 = **14.35%**, MRR = **0.0618**, Latency = **0.12 ms**, Peak RAM = **287.3 MB**.
+  - **BM25 Legacy (Diagnostic / Leaky):** R@1 = **85.65%**, R@5 = **96.38%**, R@10 = **98.57%**, MRR = **0.9028**, Latency = **1.46 ms**, Peak RAM = **357.4 MB**.
+  - **CLIP ViT-B/32 (Visual Pixels Only):** R@1 = **5.45%**, R@5 = **17.71%**, R@10 = **27.89%**, MRR = **0.1307**, Latency = **7.54 ms**, Peak RAM = **883.6 MB**.
+  - **CLIP + Prompt Ensemble (5 Frozen Templates):** R@1 = **5.14%**, R@5 = **17.00%**, R@10 = **28.01%**, MRR = **0.1268**, Latency = **15.56 ms**, Peak RAM = **553.7 MB**.
+- **Hypothesis H1 Reassessment:** Reclassified H1 as **PARTIALLY SUPPORTED / INCONCLUSIVE**. When gallery imagery lacks captions (Mode B), CLIP vision-language embeddings outperform lexical retrieval by **3.6x on R@1** (5.45% vs 1.50%). When human captions are available for gallery imagery (Mode A), lexical retrieval remains superior (42.12% vs 5.45% R@1).
+- **Leakage Regression Tests:** Implemented 8 dedicated regression tests in `tests/test_leakage_regression.py`. Repository test suite expanded to 47 passing tests (100% pass rate in 4.93s).
+
+---
+
+## [2026-09-15] — Milestone 4: Semantic Retrieval Baseline & Empirical Evaluation
+
+**Milestone Identifier:** M4  
+**Milestone Owner:** Rahul (Team Lead)  
+**Collaborators:** Tanishka Mukhi (Dataset & Architecture), Adishri Abro (Literature & Evaluation)  
+**Status:** Completed & Empirically Verified on CPU Hardware  
+
+### 1. Milestone Objectives Achieved
+- **Method A1 (BM25 Lexical Baseline):** Implemented `src/semantic_search/bm25.py` with standard Okapi BM25 ($k_1 = 1.5, b = 0.75$) and multi-caption combined-document aggregation (`DEC-020`).
+- **Method A2 (Zero-Shot CLIP ViT-B/32):** Implemented `src/semantic_search/clip_model.py` loading `openai/clip-vit-base-patch32` strictly on CPU (`DEC-021`), with mandatory $L_2$ feature normalization.
+- **Method A3 (Domain Prompt Ensembling Ablation):** Implemented `src/semantic_search/prompt_ensembler.py` with 5 frozen remote-sensing templates (`DEC-023`).
+- **FAISS CPU Vector Indexing:** Implemented `src/semantic_search/faiss_index.py` using exact `IndexFlatIP(512)` (`DEC-022`), measuring inner-product search latency of **0.053 ms** on CPU.
+- **Persistent Embedding Caching:** Implemented `src/semantic_search/embedding_cache.py` saving $1,093 \times 512$ float32 embeddings with metadata validation.
+- **Full Benchmark Execution:** Implemented reproducible CLI runner `src/semantic_search/run_m4.py` consuming `experiments/configs/m4_retrieval.yaml`. Evaluated all 5,465 test queries across 1,093 held-out RSICD gallery images under the standardized Caption-to-Own-Image protocol.
+- **Empirical Results `[LOCALLY MEASURED]`:**
+  - **BM25:** R@1 = **85.65%**, R@5 = **96.38%**, R@10 = **98.57%**, MRR = **0.9028**, Latency = **1.46 ms**, Peak RAM = **357.4 MB**.
+  - **CLIP ViT-B/32:** R@1 = **5.45%**, R@5 = **17.71%**, R@10 = **27.89%**, MRR = **0.1307**, Latency = **7.18 ms**, Peak RAM = **1,260.6 MB**.
+  - **CLIP + Prompt Ensemble:** R@1 = **5.14%**, R@5 = **17.00%**, R@10 = **28.01%**, MRR = **0.1268**, Latency = **13.97 ms**, Peak RAM = **669.2 MB**.
+- **Hypothesis H1 Assessment:** Formally recorded that Hypothesis H1 is **NOT SUPPORTED / REJECTED** under the Caption-to-Own-Image instance retrieval protocol (`DEC-024`). BM25 outperforms zero-shot CLIP by 15.7x on R@1 due to exact caption vocabulary matching and nadir-view domain shift in general-domain CLIP.
+- **Failure Analysis:** Analyzed 3,941 failure cases (rank > 10) in CLIP: Broad Geographic Category Ambiguity (36.3%), Spatial/Relational Confusion (32.4%), Dense Small Objects (20.0%), and Fine-Grained Attribute Mismatch (11.3%).
+- **Test Suite Expansion:** Added 13 new unit/integration tests across `tests/test_bm25.py`, `tests/test_faiss_index.py`, `tests/test_embedding_cache.py`, `tests/test_prompt_ensembler.py`, `tests/test_retrieval_evaluator.py`, and `tests/test_clip_model.py`. All 37 tests in the repository pass cleanly in 8.00s.
+
+### 2. Documents Created / Modified
+1. `src/semantic_search/__init__.py` `[NEW]` — Module exports.
+2. `src/semantic_search/bm25.py` `[NEW]` — Okapi BM25 implementation.
+3. `src/semantic_search/clip_model.py` `[NEW]` — CPU-forced CLIP ViT-B/32 loader and encoder.
+4. `src/semantic_search/faiss_index.py` `[NEW]` — Exact FAISS IndexFlatIP.
+5. `src/semantic_search/embedding_cache.py` `[NEW]` — Persistent embedding caching and validation.
+6. `src/semantic_search/prompt_ensembler.py` `[NEW]` — Frozen prompt templates and ensembling.
+7. `src/semantic_search/retrieval_evaluator.py` `[NEW]` — Caption-to-Own-Image metrics and diagnostics.
+8. `src/semantic_search/profiler.py` `[NEW]` — High-precision latency and memory profiler.
+9. `src/semantic_search/run_m4.py` `[NEW]` — Reproducible CLI benchmark runner.
+10. `experiments/configs/m4_retrieval.yaml` `[NEW]` — Experiment configuration.
+11. `docs/m4_semantic_retrieval.md` `[NEW]` — Detailed milestone report and failure analysis.
+12. `tests/test_bm25.py`, `tests/test_faiss_index.py`, `tests/test_embedding_cache.py`, `tests/test_prompt_ensembler.py`, `tests/test_retrieval_evaluator.py`, `tests/test_clip_model.py` `[NEW]` — Comprehensive test suite.
+13. `decision_log.md` `[UPDATED]` — Added decisions DEC-020 to DEC-024.
+14. `devlog.md` `[UPDATED]` — Added Milestone 4 log entry.
+
+### 3. Work Deliberately NOT Performed in Milestone 4
+> [!IMPORTANT]
+> **Strict Non-Implementation Declaration:**  
+> **No change detection models or training were implemented.**
+> Specifically:
+> - No pixel differencing, SSIM, or CVA code was executed (reserved for M5).
+> - No Siamese CNN training or inference was performed (reserved for M8).
+> - No synthetic perturbation generators were implemented (reserved for M6).
+> - Milestone 4 was strictly confined to the cross-modal semantic retrieval pipeline.
+
+### 4. Handoff to Subsequent Milestones
+- **To Milestone 5 (Classical Change Detection Baselines — Owner: Tanishka Mukhi):**
+  - M4 establishes the benchmark standard: clean data loaders, frozen validation calibration, and reproducible CLI runners.
+  - Implement B1 (Pixel Diff), B2 (SSIM), and B3 (CVA) on LEVIR-CD.
+- **To Milestone 6 (Evaluation Suite & Diagnostics — Owner: Adishri Abro):**
+  - Integrate retrieval metric outputs (`experiments/results/m4/summary.csv`) into global reporting dashboards.
+
+---
+
 ## [2026-09-15] — Milestone 3: Research Definition, Literature Review & Baseline/Metric Formalization
 
 **Milestone Identifier:** M3  

@@ -41,22 +41,36 @@ Grounding: Radford et al. (ICML 2021); Lu et al. (IEEE TGRS 2018); Liu et al. (I
                    Recall@1, Recall@5, MRR, Latency
 ```
 
-### EXP-RET-01: Classical Text-to-Image Inverted Index Baseline (Method A1)
+### EXP-RET-01: Classical Text-to-Image Lexical Baseline (Method A1 — Leakage-Controlled)
+- **Status:** **Completed & Corrected `[LOCALLY MEASURED]`**
 - **Research Question:** RQ1
-- **Method:** Inverted Token Index / BM25 lexical retrieval over image captions.
-- **Baseline Role:** Non-neural lower bound.
+- **Method:** Okapi BM25 lexical retrieval evaluated across two leakage-controlled protocols plus legacy reference:
+  1. *Mode A (Primary):* Leave-One-Caption-Out Caption-Indexed BM25 (query caption strictly excluded from target document).
+  2. *Mode B (Auxiliary Control):* Category Metadata Lexical Baseline (gallery indexed by category labels only, zero test captions).
+  3. *Legacy Reference (Diagnostic):* Original combined-document BM25 (contains target-query text overlap leakage).
+- **Baseline Role:** Non-neural lexical lower bounds under distinct information modalities.
 - **Dataset:** RSICD `[LOCALLY MEASURED: data/raw/rsicd]`.
 - **Split:** Test split (1,093 images, 5,465 query captions) evaluated against the test gallery.
 - **Input:** Raw text query string $q$.
 - **Output:** Permutation ranking of the 1,093 test gallery images $\pi_q$.
 - **Metric:** Recall@1, Recall@5, Recall@10, Mean Reciprocal Rank (MRR), Query Latency (ms).
 - **Hardware:** Commodity CPU, single-thread execution.
-- **Independent Variables:** Query length, token overlap.
-- **Dependent Variables:** Retrieval accuracy ($R@K$, MRR) and query latency.
-- **Controls:** Fixed RSICD Karpathy test split; identical vocabulary tokenization pipeline.
-- **Expected Interpretation:** Establishes the exact degree to which literal keyword matching fails when queries use synonymous expressions or describe visual compositions not literally matched in annotation text.
+- **Controls:** Fixed RSICD test split; identical tokenization pipeline; strict regression tests preventing query re-entry.
+- **Measured Empirical Outcomes `[LOCALLY MEASURED]`:**
+  - **Mode A (Leave-One-Caption-Out, Primary Corrected):**
+    - $R@1$: **42.12%**, $R@5$: **60.81%**, $R@10$: **67.87%**, MRR: **0.5112**
+    - Latency: Mean **1.49 ms** (p95: **2.72 ms**) | Peak Process RAM: **279.7 MB**
+  - **Mode B (Category Metadata Control, No Gallery Captions):**
+    - $R@1$: **1.50%**, $R@5$: **7.30%**, $R@10$: **14.35%**, MRR: **0.0618**
+    - Latency: Mean **0.12 ms** (p95: **0.18 ms**) | Peak Process RAM: **287.3 MB**
+  - **Legacy Diagnostic (Leakage-Affected Reference):**
+    - $R@1$: **85.65%**, $R@5$: **96.38%**, $R@10$: **98.57%**, MRR: **0.9028**
+    - Latency: Mean **1.46 ms** (p95: **2.57 ms**) | Peak Process RAM: **357.4 MB**
+- **Scientific Interpretation:** Removing target-query leakage drops caption-indexed BM25 R@1 from 85.65% to 42.12%. However, when comparing against zero-shot CLIP (5.45% R@1), Mode A retains an information advantage (having 4 human descriptive captions per image). When evaluated fairly with zero gallery captions (Mode B), zero-shot CLIP dramatically outperforms lexical retrieval (5.45% vs 1.50% R@1; 0.1307 vs 0.0618 MRR).
+
 
 ### EXP-RET-02: Zero-Shot Dual-Encoder VLM Retrieval (Method A2)
+- **Status:** **Completed `[LOCALLY MEASURED]`**
 - **Research Question:** RQ1, RQ4
 - **Method:** Pretrained OpenAI CLIP (ViT-B/32 backbone, 512-dimensional embeddings) with FAISS `IndexFlatIP` exact inner-product search.
 - **Baseline Role:** Primary vision-language embedding baseline.
@@ -66,25 +80,32 @@ Grounding: Radford et al. (ICML 2021); Lu et al. (IEEE TGRS 2018); Liu et al. (I
 - **Output:** Sorted gallery ranking $\pi_q$ by descending cosine similarity.
 - **Metric:** Recall@1, Recall@5, Recall@10, MRR, Query Latency (ms), Index RAM (MB).
 - **Hardware:** Commodity CPU, default PyTorch thread pool, $\le 8$ GB RAM budget.
-- **Independent Variables:** Cross-modal embedding alignment; query complexity tiers (Tier 1: Direct Category, Tier 2: Attribute + Scene, Tier 3: Spatial & Relational).
+- **Independent Variables:** Cross-modal embedding alignment; query complexity tiers.
 - **Dependent Variables:** $R@1, R@5, R@10$, MRR, Query Latency.
 - **Controls:** Fixed RSICD test split; identical embedding normalization ($\|\mathbf{u}\|_2 = \|\mathbf{v}\|_2 = 1.0$).
-- **Expected Interpretation:** Tests Hypothesis H1. Quantifies whether zero-shot generalist vision-language representations transfer effectively to overhead satellite imagery without domain-specific fine-tuning.
+- **Measured Empirical Outcome `[LOCALLY MEASURED]`:**
+  - $R@1$: **5.45%**, $R@5$: **17.71%**, $R@10$: **27.89%**, MRR: **0.1307**
+  - Latency: Mean **7.18 ms** (p95: **7.74 ms**), FAISS search only: **0.053 ms** | Peak Process RAM: **1,260.6 MB**
+- **Scientific Interpretation:** Under Caption-to-Own-Image, zero-shot CLIP experiences severe overhead domain shift. While it retrieves visually consistent semantic categories, it cannot discriminate specific target image instances from visually similar category peers.
 
 ### EXP-RET-03: Prompt Template & Ensembling Evaluation (Method A3 / Ablation ABL-4)
+- **Status:** **Completed `[LOCALLY MEASURED]`**
 - **Research Question:** RQ1
-- **Method:** Method A2 with context-guided prompt engineering and multi-prompt ensembling ($\mathbf{u}_{\text{ens}} = \frac{1}{M}\sum \mathbf{u}_m$).
+- **Method:** Method A2 with context-guided prompt engineering and multi-prompt ensembling across 5 frozen templates.
 - **Baseline Role:** Prompt ablation on top of Method A2.
 - **Dataset:** RSICD.
 - **Split:** Test split (1,093 images, 5,465 queries).
-- **Input:** Query $q$ wrapped in templates (`"a satellite image of {q}"`, `"aerial overhead view of {q}"`, `"remote sensing photo of {q}"`).
+- **Input:** Query $q$ wrapped in 5 frozen templates (`"a satellite image of {q}"`, `"a remote sensing image of {q}"`, etc.).
 - **Output:** Similarity ranking from ensembled query embeddings.
 - **Metric:** $\Delta R@1, \Delta R@5, \Delta \text{MRR}$ relative to bare query prompt.
 - **Hardware:** Commodity CPU.
-- **Independent Variables:** Prompt template structure and ensemble depth ($M \in \{1, 3, 5\}$).
+- **Independent Variables:** Prompt template structure and ensemble depth ($M = 5$).
 - **Dependent Variables:** Relative recall change.
 - **Controls:** Same image embeddings $\mathbf{V}$; same test split.
-- **Expected Interpretation:** Demonstrates whether simple prompt adaptation mitigates the domain shift of general-domain CLIP without adding model parameters or retraining.
+- **Measured Empirical Outcome `[LOCALLY MEASURED]`:**
+  - $R@1$: **5.14%**, $R@5$: **17.00%**, $R@10$: **28.01%**, MRR: **0.1268**
+  - Latency: Mean **13.97 ms** (p95: **17.82 ms**) | Peak Process RAM: **669.2 MB**
+- **Scientific Interpretation:** Domain prompt ensembling slightly improves deep ranks for select ambiguous categories (e.g. airport rank improved from 16 to 3 in qualitative examples), but overall global instance-level R@1 remains essentially flat ($5.14\%$ vs $5.45\%$) while doubling query latency on CPU.
 
 ---
 

@@ -1,0 +1,217 @@
+[
+  {
+    "query_index": 0,
+    "query_text": "The airport is very large.",
+    "target_image": "airport_348.jpg",
+    "category": "airport",
+    "bm25": {
+      "rank": 1,
+      "top_5": [
+        "airport_348.jpg",
+        "airport_49.jpg",
+        "airport_354.jpg",
+        "airport_41.jpg",
+        "bareland_67.jpg"
+      ]
+    },
+    "clip": {
+      "rank": 16,
+      "top_5": [
+        "airport_47.jpg",
+        "airport_52.jpg",
+        "airport_352.jpg",
+        "airport_358.jpg",
+        "airport_354.jpg"
+      ],
+      "top_5_scores": [
+        0.3105108141899109,
+        0.3074586093425751,
+        0.30696505308151245,
+        0.3069455623626709,
+        0.3058949410915375
+      ]
+    },
+    "clip_ensemble": {
+      "rank": 3,
+      "top_5": [
+        "airport_47.jpg",
+        "airport_49.jpg",
+        "airport_348.jpg",
+        "airport_352.jpg",
+        "airport_358.jpg"
+      ]
+    }
+  },
+  {
+    "query_index": 250,
+    "query_text": "This naked earth has a dispersed veined texture.",
+    "target_image": "bareland_50.jpg",
+    "category": "bareland",
+    "bm25": {
+      "rank": 1,
+      "top_5": [
+        "bareland_50.jpg",
+        "bareland_6.jpg",
+        "mountain_39.jpg",
+        "bareland_46.jpg",
+        "bareland_58.jpg"
+      ]
+    },
+    "clip": {
+      "rank": 37,
+      "top_5": [
+        "forest_65.jpg",
+        "forest_56.jpg",
+        "mountain_48.jpg",
+        "desert_57.jpg",
+        "mountain_63.jpg"
+      ],
+      "top_5_scores": [
+        0.3025885224342346,
+        0.300982803106308,
+        0.3002415597438812,
+        0.2985371947288513,
+        0.296843022108078
+      ]
+    },
+    "clip_ensemble": {
+      "rank": 73,
+      "top_5": [
+        "bareland_7.jpg",
+        "bareland_44.jpg",
+        "desert_57.jpg",
+        "mountain_66.jpg",
+        "forest_66.jpg"
+      ]
+    }
+  },
+  {
+    "query_index": 750,
+    "query_text": "There's a playground next to the road.",
+    "target_image": "bridge_349.jpg",
+    "category": "bridge",
+    "bm25": {
+      "rank": 2,
+      "top_5": [
+        "playground_65.jpg",
+        "bridge_349.jpg",
+        "playground_57.jpg",
+        "pond_401.jpg",
+        "playground_53.jpg"
+      ]
+    },
+    "clip": {
+      "rank": 635,
+      "top_5": [
+        "mediumresidential_50.jpg",
+        "mediumresidential_70.jpg",
+        "mediumresidential_65.jpg",
+        "mediumresidential_49.jpg",
+        "sparseresidential_52.jpg"
+      ],
+      "top_5_scores": [
+        0.29197409749031067,
+        0.28831255435943604,
+        0.27944207191467285,
+        0.27863460779190063,
+        0.27773454785346985
+      ]
+    },
+    "clip_ensemble": {
+      "rank": 693,
+      "top_5": [
+        "mediumresidential_70.jpg",
+        "mediumresidential_65.jpg",
+        "mediumresidential_50.jpg",
+        "mediumresidential_49.jpg",
+        "mediumresidential_64.jpg"
+      ]
+    }
+  },
+  {
+    "query_index": 1500,
+    "query_text": "decorated with trees, the houses are in tight rows in curved profiled blocks.",
+    "target_image": "denseresidential_50.jpg",
+    "category": "denseresidential",
+    "bm25": {
+      "rank": 1,
+      "top_5": [
+        "denseresidential_50.jpg",
+        "denseresidential_61.jpg",
+        "denseresidential_49.jpg",
+        "denseresidential_58.jpg",
+        "denseresidential_57.jpg"
+      ]
+    },
+    "clip": {
+      "rank": 63,
+      "top_5": [
+        "denseresidential_55.jpg",
+        "mediumresidential_54.jpg",
+        "mediumresidential_67.jpg",
+        "mediumresidential_64.jpg",
+        "mediumresidential_72.jpg"
+      ],
+      "top_5_scores": [
+        0.3020015358924866,
+        0.295012503862381,
+        0.2926860451698303,
+        0.28980201482772827,
+        0.28865987062454224
+      ]
+    },
+    "clip_ensemble": {
+      "rank": 60,
+      "top_5": [
+        "denseresidential_55.jpg",
+        "mediumresidential_67.jpg",
+        "denseresidential_53.jpg",
+        "mediumresidential_54.jpg",
+        "denseresidential_408.jpg"
+      ]
+    }
+  },
+  {
+    "query_index": 3000,
+    "query_text": "there are plenty of free parking spaces in the parking lot.",
+    "target_image": "parking_56.jpg",
+    "category": "parking",
+    "bm25": {
+      "rank": 1,
+      "top_5": [
+        "parking_56.jpg",
+        "parking_381.jpg",
+        "parking_59.jpg",
+        "parking_55.jpg",
+        "parking_40.jpg"
+      ]
+    },
+    "clip": {
+      "rank": 22,
+      "top_5": [
+        "parking_381.jpg",
+        "parking_59.jpg",
+        "parking_44.jpg",
+        "parking_52.jpg",
+        "parking_389.jpg"
+      ],
+      "top_5_scores": [
+        0.3279934525489807,
+        0.3277304470539093,
+        0.3251067101955414,
+        0.32285264134407043,
+        0.3226175308227539
+      ]
+    },
+    "clip_ensemble": {
+      "rank": 33,
+      "top_5": [
+        "parking_389.jpg",
+        "parking_44.jpg",
+        "parking_59.jpg",
+        "parking_381.jpg",
+        "parking_47.jpg"
+      ]
+    }
+  }
+]

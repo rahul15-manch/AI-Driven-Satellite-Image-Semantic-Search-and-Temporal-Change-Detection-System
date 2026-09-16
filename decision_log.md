@@ -311,3 +311,107 @@ This document records the foundational research, architectural, and engineering 
 - **Status:** Confirmed
 - **Evidence / Source:** Comprehensive literature audit (`literature_review.md` Sections 7, 11, and 12).
 
+---
+
+### DEC-020: BM25 Multi-Caption Image-Level Aggregation Strategy
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** In RSICD, each image possesses 5 separate human-written captions. When using BM25 for image retrieval, an indexing strategy is required to represent the image in lexical space.
+- **Alternatives Considered:**
+  1. Index each caption as a completely independent document and map hits back to the image.
+  2. Take the maximum BM25 score across individual captions (`max_caption`).
+  3. Concatenate all 5 captions into a single unified multi-sentence document representing the image (`combined_document`).
+- **Decision Made:** Adopt the `combined_document` strategy as the default primary representation (with `max_caption` supported as an alternative in code).
+- **Rationale & Trade-offs:** An aerial image contains multiple complementary geographic features. Concatenating all 5 annotations aggregates the full descriptive vocabulary of the scene, maximizing lexical coverage and providing the strongest, fairest deterministic baseline.
+- **Status:** Confirmed
+- **Evidence / Source:** Information retrieval literature; `src/semantic_search/bm25.py`.
+
+---
+
+### DEC-021: Strict CPU-Forced Model Loading and L2 Normalization for CLIP
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** Ensuring that vision-language embedding extraction conforms strictly to project CPU-only execution mandates and mathematical inner-product equivalence.
+- **Alternatives Considered:**
+  1. Allow automatic fallback to CUDA/MPS if available.
+  2. Strictly force `device="cpu"` and log execution mode explicitly at initialization.
+- **Decision Made:** Explicitly force `device="cpu"` across all CLIP model loading and encoding passes, and apply mandatory $L_2$ vector normalization ($\mathbf{v} / \|\mathbf{v}\|_2$) to both image and text embeddings.
+- **Rationale & Trade-offs:** Guarantees absolute reproducibility across standard student laptops without GPU dependencies. $L_2$ normalization ensures that inner products calculated by FAISS strictly represent cosine similarity.
+- **Status:** Confirmed
+- **Evidence / Source:** Radford et al. (2021); `src/semantic_search/clip_model.py`.
+
+---
+
+### DEC-022: Selection of FAISS IndexFlatIP for Exact Vector Retrieval
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** Choosing a vector indexing data structure in FAISS for the 1,093 RSICD test gallery image embeddings.
+- **Alternatives Considered:**
+  1. Approximate Nearest Neighbors with Inverted File Index (`IndexIVFFlat`).
+  2. Hierarchical Navigable Small World graphs (`IndexHNSWFlat`).
+  3. Exact inner product search (`IndexFlatIP`).
+- **Decision Made:** Adopt `faiss.IndexFlatIP` exclusively for the test gallery.
+- **Rationale & Trade-offs:** With $N = 1,093$ vectors of dimension $D = 512$, the entire index requires only 2.18 MB of RAM and exact dot-product search takes only **0.053 ms** on CPU. Using ANN quantization would add unnecessary approximation error and indexing complexity with zero latency benefit.
+- **Status:** Confirmed
+- **Evidence / Source:** M3 literature analysis (`literature_review.md` Section 2.4); empirical search latency measurements.
+
+---
+
+### DEC-023: Frozen Remote-Sensing Prompt Ensemble Templates for Method A3
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** Defining the prompt templates for the domain prompt ensembling ablation (Method A3) without test-set tuning.
+- **Alternatives Considered:**
+  1. Dynamically iterate on prompts until the test R@1 metric improves (invalid test-set leakage).
+  2. Freeze a small, literature-grounded set of 5 remote-sensing templates prior to evaluation:
+     - `"{query}"`
+     - `"a satellite image of {query}"`
+     - `"a remote sensing image of {query}"`
+     - `"an overhead image showing {query}"`
+     - `"an aerial photograph of {query}"`
+- **Decision Made:** Adopt the frozen set of 5 templates. Average prompt embeddings across templates and re-normalize before FAISS search.
+- **Rationale & Trade-offs:** Prevents data leakage while testing whether context-guided prompt framing improves zero-shot transfer on aerial imagery.
+- **Status:** Confirmed
+- **Evidence / Source:** Radford et al. (2021); `src/semantic_search/prompt_ensembler.py`.
+
+---
+
+### DEC-024: Empirical Rejection of Hypothesis H1 under Caption-to-Own-Image Protocol
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** Evaluating whether empirical results support Hypothesis H1 (*"Vision-language embeddings provide more semantically relevant results than simple lexical retrieval"*).
+- **Alternatives Considered:**
+  1. Claim CLIP is superior based on general industry sentiment.
+  2. Rely strictly on measured metrics: BM25 achieved **85.65% R@1 / 0.9028 MRR**, whereas zero-shot CLIP ViT-B/32 achieved **5.45% R@1 / 0.1307 MRR**.
+- **Decision Made:** Formally record that Hypothesis H1 is **NOT SUPPORTED / REJECTED** under the Caption-to-Own-Image evaluation protocol on RSICD.
+- **Rationale & Trade-offs:** Scientific honesty is mandatory. Because test captions share unique vocabulary with other captions of the exact target image, lexical BM25 excels. Zero-shot CLIP experiences domain shift and retrieves other images of the same semantic category rather than the specific instance image.
+- **Status:** Superseded by DEC-025
+- **Evidence / Source:** Measured results in `experiments/results/m4/summary.csv`; `docs/m4_semantic_retrieval.md`.
+
+---
+
+### DEC-025: Leakage-Controlled BM25 Evaluation Protocol and Empirical Reassessment of H1 / RQ1
+- **Date:** 2026-09-15
+- **Owner:** Rahul (Team Lead)
+- **Context:** Research audit of the original M4 BM25 evaluation revealed target-query lexical overlap leakage. The initial baseline concatenated all five human captions into a single document per image ($D_i = C_{i1} \mathbin{\Vert} \dots \mathbin{\Vert} C_{i5}$), allowing query caption $q = C_{ik}$ to match its identical textual tokens in the target gallery document. This inflated BM25 scores (85.65% R@1) and created an unfair comparison against zero-shot CLIP, which had access only to visual pixels with zero gallery text descriptions.
+- **Alternatives Considered:**
+  1. *Erase legacy BM25 results:* Methodologically deceptive; violates research integrity and destroys diagnostic history.
+  2. *Mode A — Leave-One-Caption-Out Caption-Indexed BM25:* For each query $q = C_{ik}$, the target gallery document $D_i$ dynamically and immutably retains only the four remaining captions ($\bigcup_{j \ne k} C_{ij}$), strictly excluding $q$. Non-target images retain all 5 captions.
+  3. *Mode B — Category Metadata Lexical Baseline:* Represent each gallery image using only its category label (e.g., "airport", "parking"), providing a zero-caption lexical control.
+  4. *Preserve original results as Diagnostic Baseline:* Retain the leaky protocol under `experiments/results/m4/legacy_caption_indexed/` for full auditability.
+- **Decision Made:**
+  Adopt Mode A (Leave-One-Caption-Out BM25) as the primary leakage-controlled baseline, implement Mode B (Category Metadata BM25) as an auxiliary control, preserve legacy results with explicit diagnostic labelling, and re-evaluate H1/RQ1 on the corrected empirical evidence.
+- **Empirical Measured Results (RSICD 1,093 Test Gallery Images, 5,465 Test Queries, CPU-Only):**
+  - **BM25 Legacy (Diagnostic / Leaky):** R@1 = **85.65%**, R@5 = **96.38%**, R@10 = **98.57%**, MRR = **0.9028**, Latency = 1.46 ms.
+  - **BM25 Corrected (Leave-One-Caption-Out, Mode A):** R@1 = **42.12%**, R@5 = **60.81%**, R@10 = **67.87%**, MRR = **0.5112**, Latency = 1.49 ms.
+  - **BM25 Metadata Baseline (Mode B, Category Labels Only):** R@1 = **1.50%**, R@5 = **7.30%**, R@10 = **14.35%**, MRR = **0.0618**, Latency = 0.12 ms.
+  - **CLIP ViT-B/32 (Visual Pixels Only, Zero Gallery Text):** R@1 = **5.45%**, R@5 = **17.71%**, R@10 = **27.89%**, MRR = **0.1307**, Latency = 7.54 ms.
+  - **CLIP + Prompt Ensemble (5 Frozen Templates):** R@1 = **5.14%**, R@5 = **17.00%**, R@10 = **28.01%**, MRR = **0.1268**, Latency = 15.56 ms.
+- **Scientific Impact & Reassessment:**
+  - **Hypothesis H1 Reassessment:** Classified as **PARTIALLY SUPPORTED / INCONCLUSIVE**. When gallery imagery has zero textual descriptions and only category metadata (Mode B), CLIP embeddings outperform lexical retrieval by **3.6x on R@1** (5.45% vs 1.50%) and **2.1x on MRR** (0.1307 vs 0.0618). However, when human captions are available for gallery imagery (Mode A), lexical retrieval remains superior (42.12% vs 5.45% R@1) due to rich human lexical overlap and nadir-view domain shift in zero-shot CLIP.
+  - **Research Question RQ1 Reassessment:** Zero-shot CLIP provides semantically relevant retrieval at the category/scene level without needing any image text annotations, operating at 7.54 ms/query on CPU. However, fine-grained instance discrimination requires domain-adapted remote-sensing embeddings.
+- **Status:** Approved & Enforced
+- **Evidence / Source:** `tests/test_leakage_regression.py` (8 passing regression tests); `experiments/results/m4/summary.csv`; `docs/m4_semantic_retrieval.md`.
+
+
+

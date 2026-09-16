@@ -54,7 +54,11 @@ While state-of-the-art literature increasingly prioritizes multi-billion paramet
 *Dual-encoder vision-language embeddings (Method A2) will achieve statistically significant improvements in Caption-to-Own-Image Recall@1, Recall@5, and MRR over a classical BM25/keyword inverted index baseline (Method A1) on the RSICD test split.*
 - **Experimental Test:** Experiment Suite A (A1 vs. A2 on 1,093 held-out RSICD test scenes, 5,465 queries).
 - **Target Metrics:** $R@1, R@5, R@10$, MRR.
-- **Required Evidence:** Measured $R@K(\text{A2}) > R@K(\text{A1})$ with non-overlapping confidence intervals across query tiers.
+- **Required Evidence:** Measured $R@K(\text{A2}) > R@K(\text{A1})$ across equivalent information baselines.
+- **Empirical Status (Milestone M4 Corrective — DEC-025):** **PARTIALLY SUPPORTED / INCONCLUSIVE (Dependent on Information Modality)**.
+  - *When gallery possesses human text descriptions (Mode A vs CLIP):* **NOT SUPPORTED**. Leave-One-Caption-Out BM25 achieves **42.12% R@1 / 0.5112 MRR**, outperforming zero-shot CLIP ViT-B/32 (**5.45% R@1 / 0.1307 MRR**) due to rich caption vocabulary overlap and nadir-view domain shift in web-pretrained CLIP.
+  - *When gallery lacks captions (CLIP vs Mode B Category Metadata):* **SUPPORTED**. Zero-shot CLIP (**5.45% R@1 / 0.1307 MRR**) significantly outperforms the Category Metadata BM25 baseline (**1.50% R@1 / 0.0618 MRR**) by **$3.6\times$ on R@1** and **$2.1\times$ on MRR**.
+
 
 ### Hypothesis 2 (H2) — Change Detection Architecture
 *A lightweight Fully Convolutional Siamese Difference Network (`FC-Siam-diff`, B4) will achieve higher F1-score and IoU on the changed class than classical pixel-level (B1), structural (B2), and spectral vector (B3) baselines on LEVIR-CD, even when classical methods use optimal validation-calibrated thresholds.*
@@ -105,8 +109,9 @@ All claims across the project maintain strict separation across epistemic catego
 4. `[PROJECT DECISION: DEC-017]` Thresholds must be calibrated strictly on validation data ($\tau^* = \arg\max_{\tau} F_1(\tau; \mathcal{D}_{\text{val}})$) or computed via unsupervised Otsu; test-set tuning is prohibited.
 5. `[PROJECT DECISION: DEC-019]` The proposed quality-aware method is classified as an **ADAPTATION & COMBINATION**, with zero unsupported claims of foundational theoretical novelty.
 
-### Tier 3: Hypotheses Under Investigation
-1. `[HYPOTHESIS: H1]` Pretrained CLIP embeddings significantly outperform keyword inverted indices for remote sensing image retrieval without fine-tuning.
+### Tier 3: Hypotheses Under Investigation & Empirical Status
+1. `[HYPOTHESIS: H1 — DEC-025]` *Partially Supported / Inconclusive (Modality Dependent):* Zero-shot CLIP embeddings significantly outperform lexical retrieval when gallery images have zero captions and only category metadata (3.6x R@1 gain; 5.45% vs 1.50%). However, lexical BM25 outperforms CLIP when human captions are available for gallery images (42.12% vs 5.45% R@1).
 2. `[HYPOTHESIS: H2]` Lightweight Siamese CNNs outperform validation-tuned classical differencing on high-resolution building change detection.
 3. `[HYPOTHESIS: H3]` Heuristic quality gating suppresses non-ground false alarms under controlled illumination and registration perturbations.
 4. `[HYPOTHESIS: H4]` Both pipelines can execute within an 8 GB RAM and $<2$ second per tile CPU latency budget.
+

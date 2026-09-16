@@ -1,0 +1,93 @@
+{
+  "method": "CLIP ViT-B/32 Zero-Shot Retrieval",
+  "total_evaluated_queries": 5465,
+  "total_failures_rank_gt_10": 3941,
+  "failure_rate_percentage": 72.113,
+  "classification_methodology": "Automatic rule-based keyword heuristic classification applied across all 3,941 queries with target rank > 10 (not manual annotation).",
+  "observed_failure_patterns_counts": {
+    "generic_repetitive_caption": 1,
+    "dense_small_objects": 790,
+    "fine_grained_attribute_mismatch": 445,
+    "spatial_relational_confusion": 1276,
+    "broad_geographic_context": 1429
+  },
+  "observed_failure_patterns_percentages": {
+    "generic_repetitive_caption": 0.025,
+    "dense_small_objects": 20.046,
+    "fine_grained_attribute_mismatch": 11.292,
+    "spatial_relational_confusion": 32.378,
+    "broad_geographic_context": 36.26
+  },
+  "sample_failed_cases": [
+    {
+      "query": "The airport is very large.",
+      "target": "airport_348.jpg",
+      "category": "airport",
+      "actual_rank": 16,
+      "top_1_retrieved": "airport_47.jpg"
+    },
+    {
+      "query": "next to the airport is the green grass.",
+      "target": "airport_348.jpg",
+      "category": "airport",
+      "actual_rank": 14,
+      "top_1_retrieved": "airport_352.jpg"
+    },
+    {
+      "query": "next to the airport is green grass .",
+      "target": "airport_348.jpg",
+      "category": "airport",
+      "actual_rank": 16,
+      "top_1_retrieved": "airport_352.jpg"
+    },
+    {
+      "query": "The airport is very large.",
+      "target": "airport_348.jpg",
+      "category": "airport",
+      "actual_rank": 16,
+      "top_1_retrieved": "airport_47.jpg"
+    },
+    {
+      "query": "the airport is very large .",
+      "target": "airport_348.jpg",
+      "category": "airport",
+      "actual_rank": 16,
+      "top_1_retrieved": "airport_47.jpg"
+    },
+    {
+      "query": "the aircraft parked on the white asphalt.",
+      "target": "airport_349.jpg",
+      "category": "airport",
+      "actual_rank": 51,
+      "top_1_retrieved": "airport_354.jpg"
+    },
+    {
+      "query": "the aircraft parked on the tarmac white .",
+      "target": "airport_349.jpg",
+      "category": "airport",
+      "actual_rank": 47,
+      "top_1_retrieved": "airport_354.jpg"
+    },
+    {
+      "query": "The airport has a lot of white planes.",
+      "target": "airport_35.jpg",
+      "category": "airport",
+      "actual_rank": 31,
+      "top_1_retrieved": "airport_354.jpg"
+    },
+    {
+      "query": "the airport has a lot of white planes .",
+      "target": "airport_35.jpg",
+      "category": "airport",
+      "actual_rank": 31,
+      "top_1_retrieved": "airport_354.jpg"
+    },
+    {
+      "query": "There's a lot of naked land around the airport.",
+      "target": "airport_35.jpg",
+      "category": "airport",
+      "actual_rank": 19,
+      "top_1_retrieved": "airport_352.jpg"
+    }
+  ]
+}

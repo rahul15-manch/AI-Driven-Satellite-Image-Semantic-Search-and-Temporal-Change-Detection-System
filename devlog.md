@@ -4,6 +4,29 @@ All engineering activities, architectural milestones, and experimental progress 
 
 ---
 
+## [2026-09-16] — Milestone 1–4 Full Integration Testing & Research Pipeline Validation
+
+**Milestone Identifier:** M1–M4 Integration  
+**Lead Researcher:** Rahul (Team Lead)  
+**Collaborators:** Tanishka Mukhi (Dataset & Architecture), Adishri Abro (Literature & Evaluation)  
+**Status:** 100% Passed (79/79 Tests Passing, 0 Failures)  
+
+### 1. Integration Objectives Achieved
+- **Complete Dependency Chain Validation:** Rigorously tested $\text{M1} \rightarrow \text{M2} \rightarrow \text{M3} \rightarrow \text{M4}$ software handoffs and research-methodological contracts.
+- **Architectural & Boundary Compliance:** Verified that all retrieval components in `src/semantic_search/` strictly match `architecture.md`, and that zero change detection (M5) or perturbation (M6) logic exists in the source tree (`INT-M1-01` to `INT-M1-05`).
+- **Data Pipeline Verification:** Confirmed RSICD test split accessibility, image integrity (1,093 images, 224x224 RGB), exact partition disjointness, and 5,465 1-to-1 query mappings (`INT-M2-01` to `INT-M2-07`).
+- **Metrics & Protocol Verification:** Validated mathematical formulas for R@1, R@5, R@10, and MRR against synthetic permutation test fixtures, confirming single-positive protocol compliance (`INT-M3-01` to `INT-M3-05`).
+- **Software Pipeline Validation:** Tested image loader $\rightarrow$ CLIP image encoder, caption loader $\rightarrow$ CLIP text encoder, FAISS `IndexFlatIP(512)`, cache hash verification, and prompt ensembling (`INT-M4-01` to `INT-M4-08`).
+- **Cross-Milestone Contracts & Leakage Elimination:** Verified exact set equality between M2 test split IDs and M4 gallery IDs, confirmed zero train/val overlap, and verified 100% absence of query text leakage under Mode A (`INT-CONTRACT-01` to `INT-CONTRACT-05`).
+- **End-to-End Execution & Reproducibility:** Confirmed zero-shot CLIP, Leave-One-Caption-Out BM25, and Prompt Ensemble end-to-end execution, yielding 100% deterministic reproducibility (`INT-E2E-01` to `INT-E2E-04`).
+- **Resource Safety:** Verified process memory consumption remains strictly under the 8 GB limit (peak RSS observed: 883.6 MB, 10.8% of budget).
+- **Test Suite Expansion:** Created `tests/integration/` containing 32 integration tests across 6 modules. Total repository test suite reached **79 passed tests** (47 unit/regression + 32 integration).
+- **Documents Created:**
+  - `docs/integration_test_plan.md` — Formal integration test plan and specification matrix.
+  - `docs/integration_test_report.md` — Complete integration test report, data audit, and failure history.
+
+---
+
 ## [2026-09-15] — Milestone 4 Corrective Task: Leakage-Controlled Semantic Retrieval Evaluation
 
 **Milestone Identifier:** M4 Corrective  

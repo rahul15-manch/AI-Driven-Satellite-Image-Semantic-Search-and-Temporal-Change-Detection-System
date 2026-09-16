@@ -49,6 +49,8 @@ The research foundation is documented in detail across the following records:
 - [`PRD.md`](./PRD.md) — Product / Research Requirements Document (problem statement, requirements, constraints, system boundaries).
 - [`research_findings.md`](./research_findings.md) — Empirical research findings, verified benchmark metrics, leakage audit, and scientific insights.
 - [`docs/m4_semantic_retrieval.md`](./docs/m4_semantic_retrieval.md) — Comprehensive empirical benchmark report for Milestone 4 (Leakage-controlled BM25 vs. Zero-Shot CLIP ViT-B/32 on CPU).
+- [`docs/integration_test_plan.md`](./docs/integration_test_plan.md) — M1–M4 Full Integration Test Plan and Specification Matrix (INT-M1 to INT-E2E).
+- [`docs/integration_test_report.md`](./docs/integration_test_report.md) — M1–M4 Integration Test Execution Report, Data Integrity Audit, and Failure History.
 - [`architecture.md`](./architecture.md) — 8-layer decoupled modular architecture, data flows, CPU execution strategies, and milestone dependencies.
 - [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-025).
 - [`devlog.md`](./devlog.md) — Chronological engineering and research progress log.

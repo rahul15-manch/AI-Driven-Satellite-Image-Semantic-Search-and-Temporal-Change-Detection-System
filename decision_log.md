@@ -413,5 +413,160 @@ This document records the foundational research, architectural, and engineering 
 - **Status:** Approved & Enforced
 - **Evidence / Source:** `tests/test_leakage_regression.py` (8 passing regression tests); `experiments/results/m4/summary.csv`; `docs/m4_semantic_retrieval.md`.
 
+---
 
+### DEC-026: Deterministic LEVIR-CD 256x256 Patching and Seamless Full-Image Reconstruction
+- **Date:** 2026-09-16
+- **Owner:** Tanishka Mukhi (Dataset & Preprocessing)
+- **Context:** LEVIR-CD optical satellite pairs are $1024 \times 1024$. Under commodity CPU constraints and the 8 GB RAM budget, processing full $1024 \times 1024$ image pairs simultaneously across multiple baselines requires disciplined tiling without boundary data leakage.
+- **Alternatives Considered:**
+  1. Downsample $1024 \times 1024$ images to $256 \times 256$ (destroys fine-grained building boundary annotations).
+  2. Random spatial cropping during evaluation (non-deterministic, invalid for baseline reproducibility).
+  3. Deterministic non-overlapping $256 \times 256$ tiling with seamless $1024 \times 1024$ spatial reconstruction.
+- **Decision Made:** Adopt non-overlapping $256 \times 256$ tiling (stride = 256, 16 patches per parent scene) with full $1024 \times 1024$ reconstruction via `PatchExtractor.reconstruct_image`. All test metrics are aggregated at the full-scene level across all $134,217,728$ pixels.
+- **Rationale & Trade-offs:** Preserves original pixel resolution, ensures zero overlapping duplicate pixels, keeps memory footprint under 400 MB, and prevents patch-level F1 averaging distortion.
+- **Status:** Confirmed
+- **Evidence / Source:** `src/data/patch_extractor.py`; `tests/test_patch_reconstruction.py`.
 
+---
+
+### DEC-027: Method B1 Absolute Pixel Differencing Formulation
+- **Date:** 2026-09-16
+- **Owner:** Rahul (Team Lead)
+- **Context:** Standardizing the mathematical formulation for Method B1 across RGB imagery.
+- **Alternatives Considered:**
+  1. Maximum channel difference ($\max_c |I_2 - I_1|$).
+  2. Single-channel luminance difference after grayscale conversion.
+  3. Channel-averaged absolute difference ($D_{\text{mean}} = \frac{1}{3}\sum_c |I_2 - I_1|$).
+- **Decision Made:** Adopt channel-averaged absolute difference ($D_{\text{mean}}$) normalized to $[0.0, 1.0]$ as the primary frozen formulation for Method B1.
+- **Rationale & Trade-offs:** Provides a balanced, deterministic baseline across all 3 color channels without favoring a specific spectral band.
+- **Status:** Confirmed
+- **Evidence / Source:** `src/change_detection/pixel_diff.py`; `tests/test_b1_pixel_diff.py`.
+
+---
+
+### DEC-028: Method B2 SSIM Dissimilarity Configuration
+- **Date:** 2026-09-16
+- **Owner:** Adishri Abro (Literature & Evaluation)
+- **Context:** Establishing structural similarity dissimilarity parameters matching M3 literature standards.
+- **Alternatives Considered:**
+  1. Arbitrary window sizes ($7 \times 7$ or $15 \times 15$).
+  2. Per-channel SSIM with arithmetic averaging.
+  3. Standard ITU-R 601-2 luminance conversion with an $11 \times 11$ Gaussian window and $\sigma=1.5$.
+- **Decision Made:** Adopt standard ITU-R 601-2 luminance conversion ($Y = 0.299R + 0.587G + 0.114B$), $11 \times 11$ Gaussian window, $\sigma=1.5$, $\Delta R = 1.0$, with continuous dissimilarity $D_{\text{SSIM}} = \text{clip}(1.0 - \text{SSIM}, 0.0, 1.0)$.
+- **Rationale & Trade-offs:** Matches classic Wang et al. (2004) structural similarity literature specifications established in M3; ensures continuous dissimilarity bounded in $[0.0, 1.0]$.
+- **Status:** Confirmed
+- **Evidence / Source:** `src/change_detection/ssim_detector.py`; `tests/test_b2_ssim.py`.
+
+---
+
+### DEC-029: Method B3 Change Vector Analysis (CVA) Formulation
+- **Date:** 2026-09-16
+- **Owner:** Rahul (Team Lead)
+- **Context:** Defining classical Change Vector Analysis (CVA) over optical multi-spectral/RGB imagery.
+- **Alternatives Considered:**
+  1. Unnormalized Euclidean distance (values in $[0, \sqrt{3}]$).
+  2. Normalized Euclidean distance scaled by $1/\sqrt{3}$ to ensure range $[0.0, 1.0]$.
+  3. Spectral angle mapper (SAM).
+- **Decision Made:** Adopt normalized Euclidean distance in 3D RGB space ($D_{\text{CVA}} = \frac{1}{\sqrt{3}}\|\vec{I}_2 - \vec{I}_1\|_2$).
+- **Rationale & Trade-offs:** Bounds change magnitude strictly within $[0.0, 1.0]$ for seamless threshold calibration and direct comparability against B1 and B2.
+- **Status:** Confirmed
+- **Evidence / Source:** `src/change_detection/cva_detector.py`; `tests/test_b3_cva.py`.
+
+---
+
+### DEC-030: Strict Validation-Only Threshold Selection Policy
+- **Date:** 2026-09-16
+- **Owner:** Rahul (Team Lead)
+- **Context:** Ensuring zero test-split data leakage during threshold calibration.
+- **Alternatives Considered:**
+  1. Select thresholds by sweeping the test split (invalid data leakage).
+  2. Optimize threshold exclusively on the 64-image validation split to maximize validation $F_1$, then freeze $\tau^*$ permanently before test evaluation.
+- **Decision Made:** Enforce strict validation-only threshold calibration. Search space: $\mathcal{T} = [0.005, 0.995]$ with step $0.005$ (199 candidates). Tie-breaker: choose smallest threshold among equal-F1 candidates. The selected $\tau^*$ is permanently frozen and saved to `thresholds.json`.
+- **Rationale & Trade-offs:** Eliminates test-set leakage, guaranteeing that all reported test metrics reflect true out-of-sample generalization.
+- **Status:** Confirmed
+- **Evidence / Source:** `src/change_detection/thresholding.py`; `tests/test_m5_leakage.py` (Tests A through F).
+
+---
+
+### DEC-031: Secondary Otsu Thresholding Evaluation
+- **Date:** 2026-09-16
+- **Owner:** Adishri Abro (Literature & Evaluation)
+- **Context:** Evaluating whether unsupervised Otsu histogram thresholding can replace supervised validation-F1 threshold calibration.
+- **Alternatives Considered:**
+  1. Discard Otsu entirely without empirical testing.
+  2. Compute Otsu threshold on the validation difference distribution as a secondary comparative baseline.
+- **Decision Made:** Implement Otsu as a secondary evaluation baseline alongside validation-F1.
+- **Empirical Finding:** Otsu failed catastrophically due to severe class imbalance ($5.09\%$ ground truth change), setting thresholds that were far too low ($\tau \approx 0.24$ vs $0.41$) and predicting up to $70.54\%$ of test pixels as changed ($88.8\text{M}$ false alarms).
+- **Rationale & Trade-offs:** Empirically documents the failure mode of unsupervised global variance thresholding in highly imbalanced remote sensing tasks.
+- **Status:** Confirmed
+- **Evidence / Source:** `experiments/results/m5/summary.csv`; `docs/m5_classical_change_detection.md`.
+
+---
+
+### DEC-032: Controlled Perturbation Taxonomy and Parameter Standardization for Robustness Testing
+- **Date:** 2026-09-16
+- **Owner:** Adishri Abro (Literature & Evaluation) / Rahul (Team Lead)
+- **Context:** Milestone 6 investigates why classical bi-temporal change detection methods produce false alarms when subjected to non-ground visual variations. A standardized, reproducible taxonomy of perturbations is required.
+- **Alternatives Considered:**
+  1. Stochastic random data augmentations without parameter tracking or fixed seeds.
+  2. Synthetic adversarial attacks on deep representations (invalid for classical baselines and violates scope).
+  3. Four physical perturbation families with three deterministic severity levels each, applied exclusively to $T_2$ while retaining ground truth change mask immutability.
+- **Decision Made:** Adopt four standardized physical perturbation families with fixed parameterizations:
+  1. *Global Illumination Shift:* Uniform scalar additive intensity shift $\beta \in \{+0.05, +0.15, +0.25\}$ with $[0.0, 1.0]$ saturation clipping.
+  2. *Gaussian Blur:* Isotropic spatial Gaussian filter $\sigma \in \{1.0, 2.0, 4.0\}$ with kernel truncation $4.0$.
+  3. *Geometric Misregistration:* Deterministic rigid translations $(\Delta x, \Delta y) \in \{(1, 1), (3, 3), (5, 5)\}$ pixels using nearest-neighbor padding to preserve sharpness.
+  4. *Localized Occlusion / Shadow:* Deterministic square patch covering $\{2\%, 5\%, 10\%\}$ of scene area at image center, attenuated by $0.4\times$ intensity scaling ($60\%$ reflectance drop).
+- **Rationale & Trade-offs:** Models the four most prevalent non-ground atmospheric/sensor/platform artifacts in multi-temporal satellite imagery, maintaining strict mathematical determinism across all runs.
+- **Status:** Approved & Enforced
+- **Evidence / Source:** `src/false_alarm/`; `experiments/configs/m6_false_alarm.yaml`; `tests/test_m6_perturbations.py`.
+
+---
+
+### DEC-033: Strict Frozen M5 Threshold Enforcement Under Perturbation
+- **Date:** 2026-09-16
+- **Owner:** Rahul (Team Lead)
+- **Context:** Determining whether detection thresholds should be recalibrated on perturbed evaluation data.
+- **Alternatives Considered:**
+  1. Recalibrate thresholds on perturbed test data (catastrophic methodological flaw; test-label leakage and conflates detector robustness with threshold adaptability).
+  2. Recalibrate thresholds on perturbed validation data.
+  3. Enforce strictly frozen validation-selected M5 thresholds ($\tau^*_{\text{B1}}=0.4100, \tau^*_{\text{B2}}=0.9000, \tau^*_{\text{B3}}=0.4050$) across all perturbed test evaluations.
+- **Decision Made:** Enforce strictly frozen M5 thresholds across all control and perturbed test evaluations.
+- **Rationale & Trade-offs:** In real-world satellite deployments, non-ground perturbations occur unpredictably at inference time without ground truth masks available for calibration. Freezing thresholds ensures that observed metric variations isolate detector sensitivity to visual perturbations rather than threshold retraining artifacts.
+- **Status:** Approved & Enforced
+- **Evidence / Source:** `src/false_alarm/run_m6.py`; `tests/test_m6_metrics.py`.
+
+---
+
+### DEC-034: Mathematical Formulation of Robustness and False Alarm Metrics
+- **Date:** 2026-09-16
+- **Owner:** Adishri Abro (Literature & Evaluation)
+- **Context:** Standardizing relative degradation and false-alarm generation metrics with robust zero-division guards.
+- **Alternatives Considered:**
+  1. Report only absolute metric differences ($\Delta F_1 = F_1^{\text{pert}} - F_1^{\text{ctrl}}$).
+  2. Formulate relative degradation and false-positive expansion rates with explicit zero-denominator handling.
+- **Decision Made:** Standardize the following mathematical metrics in `RobustnessMetricsCalculator`:
+  - $\Delta F_1 = F_1^{\text{pert}} - F_1^{\text{ctrl}}$
+  - $\text{Relative } F_1 \text{ Degradation (\%)} = \frac{F_1^{\text{ctrl}} - F_1^{\text{pert}}}{F_1^{\text{ctrl}}} \times 100$ (with $0.0\%$ fallback when $F_1^{\text{ctrl}} = 0$)
+  - $\Delta \text{IoU} = \text{IoU}^{\text{pert}} - \text{IoU}^{\text{ctrl}}$
+  - $\text{Relative IoU Degradation (\%)} = \frac{\text{IoU}^{\text{ctrl}} - \text{IoU}^{\text{pert}}}{\text{IoU}^{\text{ctrl}}} \times 100$
+  - $\Delta \text{FP} = \text{FP}^{\text{pert}} - \text{FP}^{\text{ctrl}}$
+  - $\text{Relative FP Increase (\%)} = \frac{\Delta \text{FP}}{\text{FP}^{\text{ctrl}}} \times 100$
+  - $\text{FP Generation Rate (\%)} = \frac{\Delta \text{FP}}{N_{\text{unchanged}}} \times 100$ where $N_{\text{unchanged}} = \text{FP}^{\text{ctrl}} + \text{TN}^{\text{ctrl}}$.
+- **Rationale & Trade-offs:** Distinguishes between performance drop and false-positive explosion; guards against divide-by-zero crashes or NaNs.
+- **Status:** Approved & Enforced
+- **Evidence / Source:** `src/false_alarm/robustness_metrics.py`; `tests/test_m6_metrics.py`.
+
+---
+
+### DEC-035: Deterministic Occlusion and Shadow Generation Policy
+- **Date:** 2026-09-16
+- **Owner:** Tanishka Mukhi (Dataset & Preprocessing)
+- **Context:** Designing localized occlusion and cloud shadow perturbations without stochastic run-to-run drift.
+- **Alternatives Considered:**
+  1. Random placement of polygons at arbitrary coordinates per evaluation.
+  2. Fixed coordinate bounding box at image center ($c_y, c_x = H/2, W/2$) with deterministic geometric scaling and attenuation.
+- **Decision Made:** Adopt centered square occlusion patches with side length $L = \text{round}(\sqrt{\text{area\_ratio} \cdot H \cdot W})$. For partial cloud shadow simulations, multiply pixel intensities in the patch by attenuation factor $\alpha = 0.40$ ($60\%$ darkening) and clamp to $[0.0, 1.0]$.
+- **Rationale & Trade-offs:** Guarantees 100% bitwise repeatability across runs, simulates realistic cloud shadowing over satellite footprints, and maintains full spatial continuity.
+- **Status:** Approved & Enforced
+- **Evidence / Source:** `src/false_alarm/occlusion.py`; `tests/test_m6_perturbations.py`.

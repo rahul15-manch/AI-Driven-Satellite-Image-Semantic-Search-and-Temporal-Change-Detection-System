@@ -4,7 +4,87 @@ All engineering activities, architectural milestones, and experimental progress 
 
 ---
 
+## [2026-09-16] — Milestone 6: False-Alarm Analysis & Controlled Perturbation Robustness Evaluation
+
+**Milestone Identifier:** M6  
+**Milestone Owner:** Adishri Abro (Literature & Evaluation Lead)  
+**Project Lead:** Rahul  
+**Collaborator:** Tanishka Mukhi (Dataset & Preprocessing)  
+**Status:** 100% Completed, Verified, and Repeatable (115/115 Tests Passing, 0 Failures)  
+
+### 1. Milestone Objectives Achieved
+- **Controlled Perturbation Taxonomy Implemented:** Designed and implemented four deterministic physical perturbation modules in `src/false_alarm/`:
+  - `IlluminationShiftPerturbation` (`src/false_alarm/illumination.py`): $\beta \in \{+0.05, +0.15, +0.25\}$ with $[0.0, 1.0]$ clipping (`DEC-032`).
+  - `GaussianBlurPerturbation` (`src/false_alarm/blur.py`): $\sigma \in \{1.0, 2.0, 4.0\}$ with kernel truncation $4.0$.
+  - `GeometricMisregistrationPerturbation` (`src/false_alarm/misregistration.py`): $(\Delta x, \Delta y) \in \{(1, 1), (3, 3), (5, 5)\}$ pixels with nearest-neighbor padding.
+  - `LocalizedOcclusionShadowPerturbation` (`src/false_alarm/occlusion.py`): Centered square patch covering $\{2\%, 5\%, 10\%\}$ scene area with $0.4\times$ intensity attenuation (`DEC-035`).
+- **Mathematical Robustness Metrics (`src/false_alarm/robustness_metrics.py`):** Formulated $\Delta F_1$, Relative $F_1$ Degradation (%), $\Delta \text{IoU}$, Relative IoU Degradation (%), Additional False Positives ($\Delta \text{FP}$), Relative FP Increase (%), and FP Generation Rate (%) with robust zero-denominator guards (`DEC-034`).
+- **Strict Frozen M5 Threshold Enforcement (`DEC-033`):** Evaluated all 12 perturbation conditions and control using the exact frozen validation thresholds established in M5 ($\tau^*_{\text{B1}}=0.4100$, $\tau^*_{\text{B2}}=0.9000$, $\tau^*_{\text{B3}}=0.4050$). Zero threshold retuning on test data.
+- **Full Benchmark Runner (`src/false_alarm/run_m6.py`):** Automated evaluation of all 39 detector-condition pairs across all 128 test scenes ($134,217,728$ pixels per condition). Generated `m6_results.csv`, `m6_summary.json`, `degradation_table.csv`, and research figures.
+- **Empirical Measured Results `[LOCALLY MEASURED]`:**
+  - **Misregistration Fragility:** SSIM false alarms surged by **$+5,679,832$ pixels** at 5 px shift (reaching $53.69\text{M}$ total FP, $40.0\%$ of entire test dataset area), as non-ground boundary shifts create structural dissimilarity halos.
+  - **Blur-Induced Recall Collapse:** SSIM building recall collapsed from $53.32\%$ to $37.26\%$ under $\sigma=4.0$, suffering **$+12.82\%$ relative $F_1$ degradation** due to edge smoothing.
+  - **Cloud Shadow False Positives:** Localized cloud shadows produced **$+1,971,579$ additional FP for B1** and **$+2,067,512$ additional FP for B3**, as a $60\%$ reflectance drop mimics building spectral displacement vectors.
+- **Computational Profile:** Complete 13-condition benchmark executed in **$261.2\text{ seconds}$** on commodity CPU. Peak RAM stayed at **$432.8\text{ MB}$** (<5.4% of 8 GB budget).
+- **Bitwise Repeatability:** Executed two independent full benchmark runs; confirmed 100% bitwise identity of all confusion matrices, $F_1$, and degradation metrics across all 39 rows ($\Delta = 0.0$).
+- **Test Suite Expansion:** Added 9 new unit and integration tests across `tests/test_m6_perturbations.py`, `tests/test_m6_metrics.py`, `tests/test_m6_reproducibility.py`, and `tests/integration/test_m6_false_alarm.py`. Repository test suite reached **115 passing tests** (100% pass rate in 21.22s).
+- **Documents & Artifacts Created:**
+  - `docs/m6_implementation_report.md` — Formal 14-section experimental research report.
+  - `experiments/configs/m6_false_alarm.yaml` — Authoritative configuration file.
+  - `experiments/results/m6/` — Machine-readable CSV and JSON result artifacts.
+  - `experiments/figures/m6/` — Research figures (`f1_vs_severity.png`, `additional_fp_vs_severity.png`, `relative_f1_degradation.png`, `detector_perturbation_heatmap.png`, and 16 qualitative comparison maps).
+
+### 2. Work Deliberately NOT Performed in Milestone 6
+> [!IMPORTANT]
+> **Strict Research & Non-Implementation Boundaries:**
+> - **No Siamese CNNs or Learned Models:** No deep learning architectures, `FC-Siam-diff`, or neural weights were implemented (reserved for M8).
+> - **No Quality-Aware Gating (QAT-CD):** No diagnostic gating or confidence weighting was implemented (reserved for M9).
+> - **Hypothesis H3 was NOT Finalized:** Kept strictly open; M6 provides empirical evidence of failure modes without evaluating the quality-aware solution.
+
+---
+
+## [2026-09-16] — Milestone 5: Classical Bi-Temporal Change Detection Baselines
+
+**Milestone Identifier:** M5  
+**Milestone Owner:** Tanishka Mukhi (Dataset & Preprocessing)  
+**Project Lead:** Rahul  
+**Collaborator:** Adishri Abro (Literature & Evaluation)  
+**Status:** 100% Completed, Verified, and Repeatable (106/106 Tests Passing, 0 Failures)  
+
+### 1. Milestone Objectives Achieved
+- **Method B1 (Absolute Pixel Differencing):** Implemented `src/change_detection/pixel_diff.py` with deterministic channel-averaged absolute disparity ($D_{\text{mean}} = \frac{1}{3}\sum_c |I_2 - I_1|$) normalized to $[0.0, 1.0]$ (`DEC-027`).
+- **Method B2 (SSIM Dissimilarity):** Implemented `src/change_detection/ssim_detector.py` with an $11 \times 11$ Gaussian window ($\sigma=1.5$), ITU-R 601-2 luminance conversion, and continuous dissimilarity $D_{\text{SSIM}} = \text{clip}(1.0 - \text{SSIM}, 0.0, 1.0)$ (`DEC-028`).
+- **Method B3 (Change Vector Analysis - CVA):** Implemented `src/change_detection/cva_detector.py` computing normalized 3D Euclidean magnitude $D_{\text{CVA}} = \frac{1}{\sqrt{3}}\|\vec{I}_2 - \vec{I}_1\|_2$ (`DEC-029`).
+- **Deterministic Patching & Seamless Full-Image Reconstruction:** Added `reconstruct_image` to `PatchExtractor` (`src/data/patch_extractor.py`), enabling $256 \times 256$ non-overlapping tiling and exact $1024 \times 1024$ spatial assembly (`DEC-026`).
+- **Strict Validation-Only Threshold Calibration:** Implemented `ValidationThresholdOptimizer` (`src/change_detection/thresholding.py`) searching candidate grid $\mathcal{T} = [0.005, 0.995]$ with step $0.005$ strictly on the 64 validation pairs ($67\text{M}$ pixels) to maximize validation $F_1$. Enforced frozen threshold application on the 128 test pairs ($134\text{M}$ pixels) (`DEC-030`).
+- **Secondary Otsu Threshold Evaluation:** Implemented `OtsuThresholdSelector` computing global histogram threshold on validation difference maps (`DEC-031`).
+- **Full Benchmark Runner:** Implemented CLI runner `src/change_detection/run_m5.py` consuming `experiments/configs/m5_change_detection.yaml`. Evaluated all 128 test pairs (2,048 patches) in $19.45\text{ seconds}$ on CPU.
+- **Empirical Measured Results `[LOCALLY MEASURED]`:**
+  - **B1 Pixel Diff (Frozen $\tau^* = 0.4100$):** Precision: **10.64%** | Recall: **16.66%** | $F_1$: **0.1299** | IoU: **6.95%** | Latency: **89.49 ms** / pair | Peak RAM: **369.2 MB**.
+  - **B2 SSIM (Frozen $\tau^* = 0.9000$):** Precision: **7.06%** | Recall: **53.32%** | $F_1$: **0.1246** | IoU: **6.65%** | Latency: **138.26 ms** / pair | Peak RAM: **369.3 MB**.
+  - **B3 CVA (Frozen $\tau^* = 0.4050$):** Precision: **10.56%** | Recall: **17.46%** | $F_1$: **0.1316** | IoU: **7.04%** | Latency: **151.95 ms** / pair | Peak RAM: **369.3 MB**.
+  - **Otsu Secondary Baselines:** B1 Otsu ($\tau = 0.2363$, $F_1 = 0.1147$, $28.75\%$ change), B2 Otsu ($\tau = 0.7051$, $F_1 = 0.1151$, $70.54\%$ change), B3 Otsu ($\tau = 0.2402$, $F_1 = 0.1158$, $28.47\%$ change).
+- **Hypothesis H2 Status:** Formally designated as **NOT YET EVALUATED / BASELINES ESTABLISHED**. M5 provides the classical baseline measurements against which the M8 learned Siamese CNN will be evaluated.
+- **Repeatability Verification:** Executed two independent benchmark runs; confirmed 100% bitwise identity of thresholds, confusion counts, and test metrics ($\Delta = 0.0$).
+- **Test Suite Expansion:** Added 27 new tests across `tests/test_patch_reconstruction.py`, `tests/test_b1_pixel_diff.py`, `tests/test_b2_ssim.py`, `tests/test_b3_cva.py`, `tests/test_m5_evaluator.py`, `tests/test_m5_leakage.py` (Tests A through F), and `tests/integration/test_m5_change_detection.py`. Total test suite reached **106 passed tests** (100% pass rate in 17.23s).
+- **Documents Created:**
+  - `docs/m5_classical_change_detection.md` — Formal methodology, empirical tables, profiling, and failure taxonomy.
+  - `docs/m5_implementation_report.md` — Comprehensive milestone completion report.
+  - `experiments/configs/m5_change_detection.yaml` — Experiment configuration file.
+  - `experiments/results/m5/` — 8 machine-readable result artifacts.
+  - `experiments/figures/m5/` — 5 research figures including threshold curves and qualitative comparisons.
+
+### 2. Work Deliberately NOT Performed in Milestone 5
+> [!IMPORTANT]
+> **Strict Non-Implementation Boundaries:**
+> - **No M6 perturbation framework:** No synthetic illumination, blur, misregistration, or quality-gating logic was implemented.
+> - **No M8/M9 learned models:** No Siamese CNNs, FC-Siam-diff, or QAT-CD models were implemented.
+> - **Hypothesis H2 was not finalized:** Kept strictly open pending M8 deep learning experiments.
+
+---
+
 ## [2026-09-16] — Milestone 1–4 Full Integration Testing & Research Pipeline Validation
+
 
 **Milestone Identifier:** M1–M4 Integration  
 **Lead Researcher:** Rahul (Team Lead)  

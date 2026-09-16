@@ -267,3 +267,93 @@ class PatchExtractor:
             metadata_list.append(meta)
 
         return metadata_list
+
+    def reconstruct_image(
+        self,
+        patches: Union[List[np.ndarray], List[Tuple[np.ndarray, PatchMetadata]], List[Tuple[np.ndarray, Tuple[int, int]]]],
+        original_height: int = 1024,
+        original_width: int = 1024,
+        dtype: Optional[np.dtype] = None,
+    ) -> np.ndarray:
+        """Reconstructs a full image/mask from extracted patches.
+
+        Supports both non-overlapping and overlapping patches (using count-averaging for overlaps).
+
+        Args:
+            patches: List of patch arrays (ordered by compute_patch_grid), or list of
+                     (patch_array, PatchMetadata), or list of (patch_array, (x, y)).
+            original_height: Target image height in pixels (default 1024).
+            original_width: Target image width in pixels (default 1024).
+            dtype: Optional target numpy dtype. If None, inferred from the first patch.
+
+        Returns:
+            Reconstructed numpy array of shape (original_height, original_width) or
+            (original_height, original_width, channels).
+        """
+        if len(patches) == 0:
+            raise ValueError("Cannot reconstruct from an empty list of patches.")
+
+        # Inspect first element to determine input format and patch dimensions
+        first_elem = patches[0]
+        if isinstance(first_elem, tuple):
+            first_patch = first_elem[0]
+        else:
+            first_patch = first_elem
+
+        patch_ndim = first_patch.ndim
+        channels = first_patch.shape[2] if patch_ndim == 3 else None
+        target_dtype = dtype or first_patch.dtype
+
+        if patch_ndim == 3:
+            reconstructed = np.zeros((original_height, original_width, channels), dtype=np.float64)
+            count_map = np.zeros((original_height, original_width, 1), dtype=np.float64)
+        else:
+            reconstructed = np.zeros((original_height, original_width), dtype=np.float64)
+            count_map = np.zeros((original_height, original_width), dtype=np.float64)
+
+        # Determine coordinates for each patch
+        grid_coords = self.compute_patch_grid(width=original_width, height=original_height)
+
+        for i, item in enumerate(patches):
+            if isinstance(item, tuple):
+                patch_arr = item[0]
+                loc = item[1]
+                if isinstance(loc, PatchMetadata):
+                    x, y = loc.x, loc.y
+                elif isinstance(loc, (tuple, list)):
+                    x, y = loc[0], loc[1]
+                else:
+                    x, y = grid_coords[i]
+            else:
+                patch_arr = item
+                if i >= len(grid_coords):
+                    raise ValueError(f"Patch index {i} exceeds grid coordinates count {len(grid_coords)}")
+                x, y = grid_coords[i]
+
+            # Determine valid crop slice inside bounds
+            h_slice = min(self.patch_size, original_height - y)
+            w_slice = min(self.patch_size, original_width - x)
+
+            if h_slice <= 0 or w_slice <= 0:
+                continue
+
+            valid_patch = patch_arr[:h_slice, :w_slice]
+
+            if patch_ndim == 3:
+                reconstructed[y : y + h_slice, x : x + w_slice, :] += valid_patch
+                count_map[y : y + h_slice, x : x + w_slice, :] += 1.0
+            else:
+                reconstructed[y : y + h_slice, x : x + w_slice] += valid_patch
+                count_map[y : y + h_slice, x : x + w_slice] += 1.0
+
+        # Avoid divide by zero for unvisited pixels (if any)
+        nonzero = count_map > 0
+        if patch_ndim == 3:
+            reconstructed[count_map.squeeze(-1) > 0] /= count_map[count_map > 0].reshape(-1, 1)
+        else:
+            reconstructed[nonzero] /= count_map[nonzero]
+
+        if np.issubdtype(target_dtype, np.integer) or target_dtype == bool:
+            return np.round(reconstructed).astype(target_dtype)
+        return reconstructed.astype(target_dtype)
+

@@ -1,0 +1,62 @@
+{
+  "B1_Pixel_Diff": {
+    "validation_f1": {
+      "tp": 1139242,
+      "fp": 9564988,
+      "fn": 5698162,
+      "tn": 117815336,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 10704230
+    },
+    "otsu": {
+      "tp": 2605459,
+      "fp": 35976899,
+      "fn": 4231945,
+      "tn": 91403425,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 38582358
+    }
+  },
+  "B2_SSIM": {
+    "validation_f1": {
+      "tp": 3645384,
+      "fp": 48011922,
+      "fn": 3192020,
+      "tn": 79368402,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 51657306
+    },
+    "otsu": {
+      "tp": 5841170,
+      "fp": 88835150,
+      "fn": 996234,
+      "tn": 38545174,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 94676320
+    }
+  },
+  "B3_CVA": {
+    "validation_f1": {
+      "tp": 1194071,
+      "fp": 10116249,
+      "fn": 5643333,
+      "tn": 117264075,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 11310320
+    },
+    "otsu": {
+      "tp": 2608860,
+      "fp": 35599612,
+      "fn": 4228544,
+      "tn": 91780712,
+      "total_pixels": 134217728,
+      "gt_changed_pixels": 6837404,
+      "pred_changed_pixels": 38208472
+    }
+  }
+}

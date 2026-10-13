@@ -1,0 +1,2 @@
+method,threshold_source,threshold_value,f1,iou,precision,recall,accuracy,tp,fp,fn,tn,total_scenes,total_pixels,gt_change_prevalence,predicted_change_prevalence,latency_mean_ms,latency_per_patch_ms,peak_rss_mb
+M9_BIT_CD,Validation F1-Optimal (Frozen),0.45,0.5926811769431694,0.4211420804106132,0.653561516053695,0.5421765336668712,0.9620365723967552,3707080,1965041,3130324,125415283,128,134217728,0.05094262957572937,0.04226059466600418,2492.41,155.78,1947.42

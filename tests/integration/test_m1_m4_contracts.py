@@ -87,16 +87,15 @@ def test_int_m1_04_milestone_boundary_compliance():
     """INT-M1-04: Verify architectural boundaries and milestone governance compliance.
 
     Verifies:
-    1. Future milestones beyond M8 (M9-M10+) are not implemented in src/.
-    2. The M1-M8 boundary is strictly preserved: M7 and M8 are recognized learned models.
-    3. Checkpoints for implemented learned models are authentic (not empty or mock).
+    1. Future milestones beyond M11 (M12+) are not implemented in src/.
+    2. The M1-M11 boundary is strictly preserved: M7, M8, M9, M10, and M11 are recognized.
+    3. Checkpoints and artifacts for implemented models are authentic (not empty or mock).
     """
     src_dir = Path("src")
     forbidden_future_terms = [
         "class SiamUnet_diff",
-        "class BIT_CD",
-        "class QAT_CD",
-        "class QualityGatedCD",
+        "class CrossModalCD",
+        "class FastAPIServer",
     ]
 
     for py_file in src_dir.rglob("*.py"):
@@ -106,16 +105,17 @@ def test_int_m1_04_milestone_boundary_compliance():
                 f"Boundary violation: Found future milestone term '{term}' in {py_file}."
             )
 
-    # Verify M9+ boundary: Future milestones beyond M8 are not implemented or checked in
-    checkpoints_m9 = Path("experiments/checkpoints/m9")
-    if checkpoints_m9.exists():
-        pts = list(checkpoints_m9.glob("*.pt")) + list(checkpoints_m9.glob("*.pth"))
-        assert len(pts) == 0, "M9 checkpoint found prematurely."
+    # Verify M12+ boundary: Future milestones beyond M11 are not implemented or checked in
+    checkpoints_m12 = Path("experiments/checkpoints/m12")
+    if checkpoints_m12.exists():
+        pts = list(checkpoints_m12.glob("*.pt")) + list(checkpoints_m12.glob("*.pth"))
+        assert len(pts) == 0, "M12 checkpoint found prematurely."
 
-    results_m9 = Path("experiments/results/m9")
-    if results_m9.exists():
-        res = list(results_m9.glob("*.csv")) + list(results_m9.glob("*.json"))
-        assert len(res) == 0, "M9 benchmark results found prematurely."
+    results_m12 = Path("experiments/results/m12")
+    if results_m12.exists():
+        res = list(results_m12.glob("*.csv")) + list(results_m12.glob("*.json"))
+        assert len(res) == 0, "M12 benchmark results found prematurely."
+
 
     # If M7 checkpoint is present, verify it is authentic and valid (not empty or mock)
     checkpoints_m7 = Path("experiments/checkpoints/m7")
@@ -128,6 +128,12 @@ def test_int_m1_04_milestone_boundary_compliance():
     if checkpoints_m8.exists():
         for pt_file in checkpoints_m8.glob("*.pt"):
             assert pt_file.stat().st_size > 500_000, f"M8 checkpoint {pt_file} is suspiciously small."
+
+    # If M9 checkpoint is present, verify it is authentic and valid
+    checkpoints_m9 = Path("experiments/checkpoints/m9")
+    if checkpoints_m9.exists():
+        for pt_file in checkpoints_m9.glob("*.pt"):
+            assert pt_file.stat().st_size > 500_000, f"M9 checkpoint {pt_file} is suspiciously small."
 
     # Verify architecture.md documents M7 as downstream learned milestone dependent on M4/M5
     arch_path = get_doc_path("architecture.md")

@@ -1,0 +1,124 @@
+experiment:
+  name: m11_experimental_evaluation
+  milestone: M11
+  seed: 42
+  device: cpu
+  num_threads: 4
+
+dataset:
+  name: LEVIR-CD
+  raw_dir: data/raw/levir_cd
+  patch_size: 256
+  stride: 256
+  padding_mode: drop
+  train_split: train
+  val_split: val
+  test_split: test
+  expected_test_scenes: 128
+  expected_test_pixels: 134217728
+
+models:
+  b1_pixel_diff:
+    name: B1_Pixel_Diff
+    type: classical
+    module: src.change_detection.pixel_diff
+    class_name: PixelDiffDetector
+    frozen_threshold: 0.4100
+    threshold_source: "Validation F1 (Frozen)"
+    parameters: 0
+    checkpoint_path: null
+
+  b2_ssim:
+    name: B2_SSIM
+    type: classical
+    module: src.change_detection.ssim_detector
+    class_name: SSIMDetector
+    frozen_threshold: 0.9000
+    threshold_source: "Validation F1 (Frozen)"
+    parameters: 0
+    checkpoint_path: null
+
+  b3_cva:
+    name: B3_CVA
+    type: classical
+    module: src.change_detection.cva_detector
+    class_name: CVADetector
+    frozen_threshold: 0.4050
+    threshold_source: "Validation F1 (Frozen)"
+    parameters: 0
+    checkpoint_path: null
+
+  m7_fc_siam_diff:
+    name: M7_FC_Siam_diff
+    type: learned_cnn
+    module: src.change_detection.fc_siam_diff
+    class_name: FCSiamDiff
+    frozen_threshold: 0.5500
+    threshold_source: "Validation F1 (Frozen)"
+    parameters: 1471409
+    checkpoint_path: experiments/checkpoints/m7/fc_siam_diff_best.pt
+
+  m8_snunet:
+    name: M8_SNUNet
+    type: learned_dense_attention
+    module: src.change_detection.snunet
+    class_name: SNUNet_ECAM
+    frozen_threshold: 0.5000
+    threshold_source: "Validation F1 (Frozen)"
+    parameters: 563377
+    checkpoint_path: experiments/checkpoints/m8/snunet_best.pt
+
+  m9_bit_cd:
+    name: M9_BIT_CD
+    type: learned_transformer
+    module: src.change_detection.bit_cd
+    class_name: BITChangeDetector
+    frozen_threshold: 0.4500
+    threshold_source: "Validation F1-Optimal (Frozen)"
+    parameters: 552097
+    checkpoint_path: experiments/checkpoints/m9/bit_cd_best.pt
+
+  m10_qat_cd_calibrated:
+    name: M10_QAT_CD_Calibrated
+    type: quality_aware
+    module: src.change_detection.qat_cd
+    class_name: QualityAwareChangeDetector
+    frozen_threshold: 0.4500
+    gamma: 0.0
+    threshold_source: "Validation F1-Optimal (Frozen, gamma=0.0)"
+    parameters: 552097
+    checkpoint_path: experiments/checkpoints/m9/bit_cd_best.pt
+    metadata_path: experiments/checkpoints/m10/qat_cd_metadata.json
+
+  m10_qat_cd_active_gating:
+    name: M10_QAT_CD_Active_Gating
+    type: quality_aware_exploratory
+    module: src.change_detection.qat_cd
+    class_name: QualityAwareChangeDetector
+    frozen_threshold: 0.4500
+    gamma: 0.30
+    threshold_source: "Exploratory Active Gating (gamma=0.30)"
+    parameters: 552097
+    checkpoint_path: experiments/checkpoints/m9/bit_cd_best.pt
+    metadata_path: experiments/checkpoints/m10/qat_cd_metadata.json
+
+statistical_evaluation:
+  bootstrap_iterations: 1000
+  confidence_level: 0.95
+  random_seed: 42
+  unit_of_analysis: "scene_level"
+
+cpu_benchmarking:
+  warmup_runs: 1
+  measurement_scenes: 128
+  patch_size: 256
+  scene_dimension: 1024
+  num_threads: 4
+
+robustness_evaluation:
+  perturbation_severities: ["mild", "medium", "strong"]
+  subsample_scenes: 16
+
+paths:
+  results_dir: experiments/results/m11
+  figures_dir: experiments/figures/m11

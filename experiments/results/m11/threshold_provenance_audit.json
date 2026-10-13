@@ -1,0 +1,115 @@
+{
+  "dataset": {
+    "train_scenes": 445,
+    "val_scenes": 64,
+    "test_scenes": 128,
+    "train_test_overlap": 0,
+    "val_test_overlap": 0,
+    "train_val_overlap": 0,
+    "split_isolation_verified": true,
+    "repeated_test_inspection_documented": true
+  },
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm",
+    "machine": "arm64",
+    "python_version": "3.10.18",
+    "torch_version": "2.5.1",
+    "torch_device": "cpu",
+    "torch_threads": 4,
+    "os_name": "posix",
+    "mac_ver": "26.6.2"
+  },
+  "checkpoints": {
+    "b1_pixel_diff": {
+      "size_bytes": 0,
+      "sha256": null,
+      "exists": true
+    },
+    "b2_ssim": {
+      "size_bytes": 0,
+      "sha256": null,
+      "exists": true
+    },
+    "b3_cva": {
+      "size_bytes": 0,
+      "sha256": null,
+      "exists": true
+    },
+    "m7_fc_siam_diff": {
+      "size_bytes": 5940138,
+      "sha256": "d0ced6952a631f1bc786d416a2b8f0f71150eede227d9a7059ac01b254889760",
+      "exists": true
+    },
+    "m8_snunet": {
+      "size_bytes": 2309546,
+      "sha256": "15b153aad944640bf3a250ab3de21e7d4986f2bf5b7fc2504386c25f0336bbe5",
+      "exists": true
+    },
+    "m9_bit_cd": {
+      "size_bytes": 2259854,
+      "sha256": "5f31724612a73f852d080441cfbcc97a46a517a5273748aa4ba639fa855d00df",
+      "exists": true
+    },
+    "m10_qat_cd_calibrated": {
+      "size_bytes": 2259854,
+      "sha256": "5f31724612a73f852d080441cfbcc97a46a517a5273748aa4ba639fa855d00df",
+      "exists": true
+    },
+    "m10_qat_cd_active_gating": {
+      "size_bytes": 2259854,
+      "sha256": "5f31724612a73f852d080441cfbcc97a46a517a5273748aa4ba639fa855d00df",
+      "exists": true
+    }
+  },
+  "models": {
+    "B1_Pixel_Diff": {
+      "threshold": 0.41,
+      "source": "Validation F1 (Frozen)",
+      "parameters": 0,
+      "status": "VERIFIED"
+    },
+    "B2_SSIM": {
+      "threshold": 0.9,
+      "source": "Validation F1 (Frozen)",
+      "parameters": 0,
+      "status": "VERIFIED"
+    },
+    "B3_CVA": {
+      "threshold": 0.405,
+      "source": "Validation F1 (Frozen)",
+      "parameters": 0,
+      "status": "VERIFIED"
+    },
+    "M7_FC_Siam_diff": {
+      "threshold": 0.55,
+      "source": "Validation F1 (Frozen)",
+      "parameters": 1471409,
+      "status": "VERIFIED"
+    },
+    "M8_SNUNet": {
+      "threshold": 0.5,
+      "source": "Validation F1 (Frozen)",
+      "parameters": 563377,
+      "status": "VERIFIED"
+    },
+    "M9_BIT_CD": {
+      "threshold": 0.45,
+      "source": "Validation F1-Optimal (Frozen)",
+      "parameters": 552097,
+      "status": "VERIFIED"
+    },
+    "M10_QAT_CD_Calibrated": {
+      "threshold": 0.45,
+      "source": "Validation F1-Optimal (Frozen, gamma=0.0)",
+      "parameters": 552097,
+      "status": "VERIFIED"
+    },
+    "M10_QAT_CD_Active_Gating": {
+      "threshold": 0.45,
+      "source": "Exploratory Active Gating (gamma=0.30)",
+      "parameters": 552097,
+      "status": "VERIFIED"
+    }
+  }
+}

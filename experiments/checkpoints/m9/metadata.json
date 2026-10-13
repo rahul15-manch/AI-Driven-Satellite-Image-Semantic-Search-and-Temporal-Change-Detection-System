@@ -1,0 +1,14 @@
+{
+  "model_architecture": "BIT-CD",
+  "parameters": 552097,
+  "best_epoch": 5,
+  "best_val_f1": 0.5512425242461447,
+  "frozen_threshold": 0.45,
+  "test_f1": 0.5926811769431694,
+  "test_iou": 0.4211420804106132,
+  "test_precision": 0.653561516053695,
+  "test_recall": 0.5421765336668712,
+  "seed": 42,
+  "device": "cpu",
+  "timestamp": "2026-10-13 19:31:33"
+}

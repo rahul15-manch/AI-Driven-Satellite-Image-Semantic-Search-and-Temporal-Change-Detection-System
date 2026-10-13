@@ -1,0 +1,24 @@
+[
+  {
+    "method": "M10_QAT_CD",
+    "threshold_source": "Validation F1-Optimal (Frozen)",
+    "threshold_value": 0.45,
+    "gamma_attenuation": 0.0,
+    "f1": 0.5926811769431694,
+    "iou": 0.4211420804106132,
+    "precision": 0.653561516053695,
+    "recall": 0.5421765336668712,
+    "accuracy": 0.9620365723967552,
+    "tp": 3707080,
+    "fp": 1965041,
+    "fn": 3130324,
+    "tn": 125415283,
+    "total_scenes": 128,
+    "total_pixels": 134217728,
+    "gt_change_prevalence": 0.05094262957572937,
+    "predicted_change_prevalence": 0.04226059466600418,
+    "latency_mean_ms": 2142.38,
+    "latency_per_patch_ms": 133.9,
+    "peak_rss_mb": 806.64
+  }
+]

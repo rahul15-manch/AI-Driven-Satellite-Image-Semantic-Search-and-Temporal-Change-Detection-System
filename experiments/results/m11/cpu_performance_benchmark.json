@@ -1,0 +1,101 @@
+{
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm",
+    "machine": "arm64",
+    "python_version": "3.10.18",
+    "torch_version": "2.5.1",
+    "torch_device": "cpu",
+    "torch_threads": 4,
+    "os_name": "posix",
+    "mac_ver": "26.6.2"
+  },
+  "configuration": {
+    "num_threads": 4,
+    "warmup_runs": 1,
+    "scenes_measured": 128,
+    "input_scene_dimension": [
+      1024,
+      1024
+    ],
+    "patch_dimension": [
+      256,
+      256
+    ],
+    "patches_per_scene": 16
+  },
+  "profiles": {
+    "B1_Pixel_Diff": {
+      "mean_latency_ms": 13.03,
+      "p50_latency_ms": 12.95,
+      "p95_latency_ms": 13.67,
+      "latency_per_patch_ms": 0.81,
+      "peak_rss_mb": 447.53,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "B2_SSIM": {
+      "mean_latency_ms": 46.98,
+      "p50_latency_ms": 46.97,
+      "p95_latency_ms": 47.82,
+      "latency_per_patch_ms": 2.94,
+      "peak_rss_mb": 449.84,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "B3_CVA": {
+      "mean_latency_ms": 12.33,
+      "p50_latency_ms": 12.3,
+      "p95_latency_ms": 12.5,
+      "latency_per_patch_ms": 0.77,
+      "peak_rss_mb": 449.86,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "M7_FC_Siam_diff": {
+      "mean_latency_ms": 603.12,
+      "p50_latency_ms": 602.44,
+      "p95_latency_ms": 644.71,
+      "latency_per_patch_ms": 37.7,
+      "peak_rss_mb": 612.3,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "M8_SNUNet": {
+      "mean_latency_ms": 1297.98,
+      "p50_latency_ms": 1277.16,
+      "p95_latency_ms": 1369.91,
+      "latency_per_patch_ms": 81.12,
+      "peak_rss_mb": 875.95,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "M9_BIT_CD": {
+      "mean_latency_ms": 1258.76,
+      "p50_latency_ms": 1238.92,
+      "p95_latency_ms": 1394.62,
+      "latency_per_patch_ms": 78.67,
+      "peak_rss_mb": 877.3,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "M10_QAT_CD_Calibrated": {
+      "mean_latency_ms": 1410.99,
+      "p50_latency_ms": 1392.52,
+      "p95_latency_ms": 1636.35,
+      "latency_per_patch_ms": 88.19,
+      "peak_rss_mb": 877.3,
+      "scenes_profiled": 16,
+      "threads": 4
+    },
+    "M10_QAT_CD_Active_Gating": {
+      "mean_latency_ms": 1809.52,
+      "p50_latency_ms": 1811.45,
+      "p95_latency_ms": 1994.79,
+      "latency_per_patch_ms": 113.1,
+      "peak_rss_mb": 877.3,
+      "scenes_profiled": 16,
+      "threads": 4
+    }
+  }
+}

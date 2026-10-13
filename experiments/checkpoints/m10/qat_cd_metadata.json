@@ -1,0 +1,20 @@
+{
+  "architecture": "Quality-Aware Temporal Change Detection (QAT-CD)",
+  "base_detector": "M9_BIT_CD",
+  "base_parameters": 552097,
+  "quality_parameters": 0,
+  "total_parameters": 552097,
+  "calibrated_gamma": 0.0,
+  "calibrated_threshold": 0.45,
+  "validation_f1": 0.5578369307143601,
+  "test_f1": 0.5926811769431694,
+  "test_iou": 0.4211420804106132,
+  "test_precision": 0.653561516053695,
+  "test_recall": 0.5421765336668712,
+  "weights": {
+    "reg": 0.34,
+    "illum": 0.33,
+    "sharp": 0.33
+  },
+  "timestamp": "2026-10-13 20:03:12"
+}

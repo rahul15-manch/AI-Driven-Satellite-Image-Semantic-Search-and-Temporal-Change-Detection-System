@@ -1,0 +1,52 @@
+[theme]
+base = "light"
+primaryColor = "#C86B4D"                 # Terracotta: buttons, links, active elements
+backgroundColor = "#F1EBE4"              # Alabaster: principal warm workspace background
+secondaryBackgroundColor = "#E3DAC9"     # Bone White: widget containers, cards
+textColor = "#3E3B39"                    # Charcoal Rock: body text
+borderColor = "#BFAF9E"                  # Khaki Silt: subtle borders and separators
+font = "sans serif"
+baseRadius = "8px"
+buttonRadius = "8px"
+showWidgetBorder = true
+showSidebarBorder = true
+
+# Semantic Palette (Earth-Toned)
+redColor = "#C86B4D"                     # Terracotta
+orangeColor = "#E1A95F"                  # Yellow Ochre
+yellowColor = "#E1A95F"                  # Yellow Ochre
+greenColor = "#6B7A65"                   # Olive Moss
+grayColor = "#8A7E72"                    # Taupe
+
+# Categorical Chart Colors (Earth Landscapes)
+chartCategoricalColors = [
+    "#2F3E32",  # Forest Green
+    "#C86B4D",  # Terracotta
+    "#6B7A65",  # Olive Moss
+    "#E1A95F",  # Yellow Ochre
+    "#4A2E2B",  # Deep Bark
+    "#9DB198",  # Sage
+    "#8A7E72",  # Taupe
+    "#3E3B39"   # Charcoal Rock
+]
+
+# Sequential Palette for Heatmaps
+chartSequentialColors = [
+    "#F1EBE4",  # Alabaster
+    "#E3DAC9",  # Bone White
+    "#D9C5B2",  # Sandy Beige
+    "#BFAF9E",  # Khaki Silt
+    "#9DB198",  # Sage
+    "#6B7A65",  # Olive Moss
+    "#E1A95F",  # Yellow Ochre
+    "#C86B4D",  # Terracotta
+    "#4A2E2B",  # Deep Bark
+    "#2F3E32"   # Forest Green
+]
+
+[theme.sidebar]
+backgroundColor = "#2F3E32"              # Forest Green: structural field-station navigation
+secondaryBackgroundColor = "#4A2E2B"     # Deep Bark: active card container
+textColor = "#F1EBE4"                    # Alabaster: readable light text on dark canopy
+borderColor = "#6B7A65"                  # Olive Moss: subtle natural divider
+primaryColor = "#E1A95F"                 # Yellow Ochre: active navigation highlight

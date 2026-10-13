@@ -95,9 +95,9 @@ def render_false_alarm_page():
         row = match.iloc[0]
         st.markdown(
             f"""
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.8rem 1rem; margin: 0.8rem 0;">
-                <strong>Selected Condition:</strong> {det_label} under <strong>{pert_label}</strong> ({selected_sev.upper()}) | 
-                Frozen Threshold &tau;* = <code>{row['threshold']:.4f}</code>
+            <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-radius: 8px; padding: 0.85rem 1.1rem; margin: 0.8rem 0; color: #3E3B39; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
+                <strong style="color: #4A2E2B;">Selected Condition:</strong> {det_label} under <strong>{pert_label}</strong> ({selected_sev.upper()}) | 
+                Frozen Threshold &tau;* = <code style="background: #FAF7F2; border: 1px solid #BFAF9E; color: #3E3B39; padding: 0.15rem 0.35rem; border-radius: 3px;">{row['threshold']:.4f}</code>
             </div>
             """,
             unsafe_allow_html=True,
@@ -195,13 +195,13 @@ def render_false_alarm_page():
     with f_col1:
         st.markdown(
             """
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
-                <h5 style="margin: 0 0 0.5rem 0; color: #991b1b; font-size: 0.95rem;">
+            <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 4px solid #C86B4D; border-radius: 6px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
+                <h5 style="margin: 0 0 0.5rem 0; color: #4A2E2B; font-size: 0.95rem; font-weight: 700;">
                     1. Misregistration-Induced False Alarm Runaway (B2 SSIM)
                 </h5>
-                <p style="font-size: 0.85rem; color: #475569; margin: 0;">
+                <p style="font-size: 0.85rem; color: #3E3B39; margin: 0; line-height: 1.55;">
                     SSIM is extremely sensitive to sub-building translational shifts. A <strong>5-pixel misregistration</strong> produced 
-                    <strong>+5,679,832 additional false positive pixels</strong> (+11.83% increase), driving total B2 false alarms 
+                    <strong style="color: #C86B4D;">+5,679,832 additional false positive pixels</strong> (+11.83% increase), driving total B2 false alarms 
                     to 53.69M pixels (40.0% of the entire test dataset). Rigid displacement creates wide mismatch bands along all building edges.
                 </p>
             </div>
@@ -211,13 +211,13 @@ def render_false_alarm_page():
 
         st.markdown(
             """
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #eab308; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
-                <h5 style="margin: 0 0 0.5rem 0; color: #854d0e; font-size: 0.95rem;">
+            <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 4px solid #E1A95F; border-radius: 6px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
+                <h5 style="margin: 0 0 0.5rem 0; color: #4A2E2B; font-size: 0.95rem; font-weight: 700;">
                     2. Defocus Recall Collapse (SSIM Structural Blindness)
                 </h5>
-                <p style="font-size: 0.85rem; color: #475569; margin: 0;">
+                <p style="font-size: 0.85rem; color: #3E3B39; margin: 0; line-height: 1.55;">
                     Under Gaussian blur (&sigma; = 4.0), SSIM suffered the worst relative F1 degradation in the entire benchmark: 
-                    <strong>+12.82% relative degradation</strong> (F1 dropped from 0.1246 to 0.1087). 
+                    <strong style="color: #C86B4D;">+12.82% relative degradation</strong> (F1 dropped from 0.1246 to 0.1087). 
                     Blur obliterates high-frequency structural edges, dropping true building recall from 53.32% down to 37.26%.
                 </p>
             </div>
@@ -228,14 +228,14 @@ def render_false_alarm_page():
     with f_col2:
         st.markdown(
             """
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
-                <h5 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">
+            <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 4px solid #6B7A65; border-radius: 6px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
+                <h5 style="margin: 0 0 0.5rem 0; color: #2F3E32; font-size: 0.95rem; font-weight: 700;">
                     3. Spectral Cloud Shadow Sensitivity (B1 & B3)
                 </h5>
-                <p style="font-size: 0.85rem; color: #475569; margin: 0;">
+                <p style="font-size: 0.85rem; color: #3E3B39; margin: 0; line-height: 1.55;">
                     Localized cloud shadows (10% area, 0.4&times; attenuation) produced 
-                    <strong>+1,971,579 additional FP for B1</strong> (+20.61% relative increase) and 
-                    <strong>+2,067,512 additional FP for B3</strong> (+20.44% relative increase). 
+                    <strong style="color: #C86B4D;">+1,971,579 additional FP for B1</strong> (+20.61% relative increase) and 
+                    <strong style="color: #C86B4D;">+2,067,512 additional FP for B3</strong> (+20.44% relative increase). 
                     Radiometric drops create spectral difference vectors that cross frozen thresholds.
                 </p>
             </div>
@@ -245,11 +245,11 @@ def render_false_alarm_page():
 
         st.markdown(
             """
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
-                <h5 style="margin: 0 0 0.5rem 0; color: #065f46; font-size: 0.95rem;">
+            <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 4px solid #2F3E32; border-radius: 6px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
+                <h5 style="margin: 0 0 0.5rem 0; color: #2F3E32; font-size: 0.95rem; font-weight: 700;">
                     4. CPU Execution Feasibility & Bitwise Determinism
                 </h5>
-                <p style="font-size: 0.85rem; color: #475569; margin: 0;">
+                <p style="font-size: 0.85rem; color: #3E3B39; margin: 0; line-height: 1.55;">
                     The full 13-condition benchmark over 134.2M test pixels completed in <strong>261.2 seconds</strong> on CPU. 
                     Peak resident memory remained strictly at <strong>432.8 MB</strong> (&le; 5.4% of budget). 
                     Repeated independent runs confirmed 100% bitwise identical confusion matrices and metrics.

@@ -194,6 +194,7 @@ def render_retrieval_page():
                         "image_id": img_id,
                         "image_path": img_path,
                         "score": float(score),
+                        "score_type": "Cosine Similarity",
                         "category": category_map.get(img_id, "Unknown"),
                     })
 
@@ -213,11 +214,21 @@ def render_retrieval_page():
                         "image_id": img_id,
                         "image_path": img_path,
                         "score": float(score),
+                        "score_type": "Cosine Similarity",
                         "category": category_map.get(img_id, "Unknown"),
                     })
 
             elif "BM25" in retrieval_method:
-                ranked_ids, scores = bm25_retriever.rank_gallery(query_input, top_k=top_k)
+                from src.semantic_search.bm25 import tokenize
+                query_tokens = tokenize(query_input)
+                all_scores = bm25_retriever.score_query_combined(query_tokens)
+                ranked_indices = sorted(
+                    range(bm25_retriever.num_docs),
+                    key=lambda idx: (all_scores[idx], -idx),
+                    reverse=True,
+                )[:top_k]
+                ranked_ids = [bm25_retriever.image_ids[idx] for idx in ranked_indices]
+                scores = [float(all_scores[idx]) for idx in ranked_indices]
                 elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
                 for rank, (img_id, score) in enumerate(zip(ranked_ids, scores), start=1):
@@ -227,12 +238,13 @@ def render_retrieval_page():
                         "image_id": img_id,
                         "image_path": img_path,
                         "score": float(score),
+                        "score_type": "BM25 Score",
                         "category": category_map.get(img_id, "Unknown"),
                     })
 
             st.markdown(
-                f"<div style='font-size: 0.85rem; color: #64748b; margin-bottom: 0.8rem;'>"
-                f"Retrieved {len(results)} matches in <strong>{elapsed_ms:.2f} ms</strong> on CPU</div>",
+                f"<div style='font-size: 0.85rem; color: #8A7E72; margin-bottom: 0.8rem;'>"
+                f"Retrieved {len(results)} matches in <strong style='color: #4A2E2B;'>{elapsed_ms:.2f} ms</strong> on CPU</div>",
                 unsafe_allow_html=True,
             )
 

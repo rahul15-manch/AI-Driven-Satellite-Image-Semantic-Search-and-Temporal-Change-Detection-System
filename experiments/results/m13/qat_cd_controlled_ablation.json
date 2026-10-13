@@ -1,0 +1,204 @@
+{
+  "mathematical_formulation": {
+    "gating_equation": "P_QAT(x, y) = clip(P_0(x, y) * (1 - gamma * U_det(x, y) * Q_defect(x, y)), 0.0, 1.0)",
+    "detector_uncertainty": "U_det(x, y) = 4 * P_0(x, y) * (1 - P_0(x, y)) [Range: 0 to 1, max at P=0.5, zero at P=0 and P=1]",
+    "composite_defect_index": "Q_defect(x, y) = w_reg * S_reg + w_illum * S_illum + w_sharp * S_sharp [Weights: 0.34, 0.33, 0.33]",
+    "signals": {
+      "S_reg": "Sobel gradient magnitude difference ratio (subpixel misregistration)",
+      "S_illum": "Uniform filtered local luminance disparity (illumination & shadow disparity)",
+      "S_sharp": "Laplacian energy disparity (optical blur differences)"
+    }
+  },
+  "ablation_conditions": [
+    {
+      "condition": "QAT_CD_Full",
+      "precision": 0.653561516053695,
+      "recall": 0.5421765336668712,
+      "f1": 0.5926811769431694,
+      "iou": 0.4211420804106132,
+      "accuracy": 0.9620365723967552,
+      "tp_pixels": 3707080,
+      "fp_pixels": 1965041,
+      "fn_pixels": 3130324,
+      "tn_pixels": 125415283,
+      "fp_reduction_pixels": 0,
+      "fp_reduction_percent": 0.0,
+      "tp_loss_pixels": 0,
+      "tp_loss_percent": 0.0,
+      "operational_benefit_ratio": 0.0
+    },
+    {
+      "condition": "Ablation_NoQuality",
+      "precision": 0.653561516053695,
+      "recall": 0.5421765336668712,
+      "f1": 0.5926811769431694,
+      "iou": 0.4211420804106132,
+      "accuracy": 0.9620365723967552,
+      "tp_pixels": 3707080,
+      "fp_pixels": 1965041,
+      "fn_pixels": 3130324,
+      "tn_pixels": 125415283,
+      "fp_reduction_pixels": 0,
+      "fp_reduction_percent": 0.0,
+      "tp_loss_pixels": 0,
+      "tp_loss_percent": 0.0,
+      "operational_benefit_ratio": 0.0
+    },
+    {
+      "condition": "Ablation_ActiveAll",
+      "precision": 0.7078151460779384,
+      "recall": 0.4930039237113969,
+      "f1": 0.581196040366011,
+      "iou": 0.4096380168800368,
+      "accuracy": 0.9638048931956291,
+      "tp_pixels": 3370867,
+      "fp_pixels": 1391488,
+      "fn_pixels": 3466537,
+      "tn_pixels": 125988836,
+      "fp_reduction_pixels": 573553,
+      "fp_reduction_percent": 29.187838828808154,
+      "tp_loss_pixels": 336213,
+      "tp_loss_percent": 9.06948325906104,
+      "operational_benefit_ratio": 1.7059215437832564
+    },
+    {
+      "condition": "Ablation_RegOnly",
+      "precision": 0.7125540677719677,
+      "recall": 0.4795309740363448,
+      "f1": 0.5732673998726265,
+      "iou": 0.4018043744296916,
+      "accuracy": 0.9636313989758492,
+      "tp_pixels": 3278747,
+      "fp_pixels": 1322654,
+      "fn_pixels": 3558657,
+      "tn_pixels": 126057670,
+      "fp_reduction_pixels": 642387,
+      "fp_reduction_percent": 32.6907682842241,
+      "tp_loss_pixels": 428333,
+      "tp_loss_percent": 11.554457956127195,
+      "operational_benefit_ratio": 1.4997373538812093
+    },
+    {
+      "condition": "Ablation_IllumOnly",
+      "precision": 0.6855922564967476,
+      "recall": 0.5162829342832456,
+      "f1": 0.5890122112867636,
+      "iou": 0.4174467107358306,
+      "accuracy": 0.9632968157529831,
+      "tp_pixels": 3530035,
+      "fp_pixels": 1618849,
+      "fn_pixels": 3307369,
+      "tn_pixels": 125761475,
+      "fp_reduction_pixels": 346192,
+      "fp_reduction_percent": 17.61754589344446,
+      "tp_loss_pixels": 177045,
+      "tp_loss_percent": 4.775861324816297,
+      "operational_benefit_ratio": 1.955389872631252
+    },
+    {
+      "condition": "Ablation_SharpOnly",
+      "precision": 0.7175409908361229,
+      "recall": 0.4783100428174202,
+      "f1": 0.5739963463534749,
+      "iou": 0.40252095069018384,
+      "accuracy": 0.9638319537043571,
+      "tp_pixels": 3270399,
+      "fp_pixels": 1287388,
+      "fn_pixels": 3567005,
+      "tn_pixels": 126092936,
+      "fp_reduction_pixels": 677653,
+      "fp_reduction_percent": 34.48543821731963,
+      "tp_loss_pixels": 436681,
+      "tp_loss_percent": 11.779648672270358,
+      "operational_benefit_ratio": 1.5518261614313422
+    },
+    {
+      "condition": "Ablation_NoUncertainty",
+      "precision": 0.7080647907396158,
+      "recall": 0.4926719263626955,
+      "f1": 0.5810493499110038,
+      "iou": 0.4094922891606981,
+      "accuracy": 0.9638074636459351,
+      "tp_pixels": 3368597,
+      "fp_pixels": 1388873,
+      "fn_pixels": 3468807,
+      "tn_pixels": 125991451,
+      "fp_reduction_pixels": 576168,
+      "fp_reduction_percent": 29.320914932563745,
+      "tp_loss_pixels": 338483,
+      "tp_loss_percent": 9.130717437983535,
+      "operational_benefit_ratio": 1.7022066100808608
+    }
+  ],
+  "validation_gamma_sweep_tau_0_45": [
+    {
+      "gamma": 0.0,
+      "threshold": 0.45,
+      "val_precision": 0.5814161888888547,
+      "val_recall": 0.53609564146594,
+      "val_f1": 0.5578369307143601,
+      "val_iou": 0.3868057243975043
+    },
+    {
+      "gamma": 0.1,
+      "threshold": 0.45,
+      "val_precision": 0.5988604344809462,
+      "val_recall": 0.5170321148413433,
+      "val_f1": 0.5549460422915014,
+      "val_iou": 0.38403136390250076
+    },
+    {
+      "gamma": 0.2,
+      "threshold": 0.45,
+      "val_precision": 0.616446038105802,
+      "val_recall": 0.496104063959822,
+      "val_f1": 0.5497664943779417,
+      "val_iou": 0.37908825871605184
+    },
+    {
+      "gamma": 0.3,
+      "threshold": 0.45,
+      "val_precision": 0.6340454727554571,
+      "val_recall": 0.47317939911968604,
+      "val_f1": 0.5419265109261673,
+      "val_iou": 0.3716729746388837
+    },
+    {
+      "gamma": 0.4,
+      "threshold": 0.45,
+      "val_precision": 0.6511024047777753,
+      "val_recall": 0.44812390014018555,
+      "val_f1": 0.5308725741264836,
+      "val_iou": 0.36135229985978684
+    },
+    {
+      "gamma": 0.5,
+      "threshold": 0.45,
+      "val_precision": 0.6681994639319949,
+      "val_recall": 0.4233034640169188,
+      "val_f1": 0.5182783123966116,
+      "val_iou": 0.3497811476559415
+    },
+    {
+      "gamma": 0.6,
+      "threshold": 0.45,
+      "val_precision": 0.6839195823960387,
+      "val_recall": 0.3991104539766812,
+      "val_f1": 0.5040662693489462,
+      "val_iou": 0.33695761986031875
+    }
+  ],
+  "operational_tradeoff_summary": {
+    "nominal_gamma": 0.3,
+    "nominal_threshold": 0.45,
+    "fp_pixels_eliminated": 573553,
+    "fp_percent_reduction": 29.19,
+    "tp_pixels_conceded": 336213,
+    "tp_percent_conceded": 9.07,
+    "precision_gain_pp": 5.43,
+    "recall_drop_pp": -4.92,
+    "f1_delta": -0.0115,
+    "operational_benefit_ratio": 1.7059,
+    "interpretation": "For every 1.0 true-positive changed pixel conceded, 1.71 false-positive pixels are suppressed. In high-consequence operational satellite monitoring where false alarms carry substantial analyst verification costs, active gating offers positive utility despite lowering unweighted F1 by 0.0115."
+  }
+}

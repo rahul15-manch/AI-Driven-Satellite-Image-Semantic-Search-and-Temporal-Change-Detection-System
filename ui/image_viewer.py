@@ -60,12 +60,12 @@ def render_retrieval_card_grid(results: List[Dict[str, Any]], cols_per_row: int 
 
                 st.markdown(
                     f"""
-                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem; margin-bottom: 0.8rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-radius: 8px; padding: 0.65rem; margin-bottom: 0.8rem; box-shadow: 0 1px 3px rgba(62,59,57,0.06);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                            <span style="background: #1e293b; color: #ffffff; font-weight: 700; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;">
+                            <span style="background: #4A2E2B; color: #F1EBE4; font-weight: 700; font-size: 0.75rem; padding: 0.18rem 0.55rem; border-radius: 4px;">
                                 Rank #{rank}
                             </span>
-                            <span style="font-size: 0.75rem; color: #475569; font-weight: 600; text-transform: capitalize;">
+                            <span style="font-size: 0.75rem; color: #3E3B39; font-weight: 600; text-transform: capitalize;">
                                 {cat}
                             </span>
                         </div>
@@ -80,7 +80,11 @@ def render_retrieval_card_grid(results: List[Dict[str, Any]], cols_per_row: int 
                 else:
                     st.warning(f"Image not found: {img_path.name}")
 
-                score_label = f"Score: {score:.4f}" if score is not None else "Score: N/A"
+                score_type = item.get("score_type", "Score")
+                if score is not None:
+                    score_label = f"{score_type}: {score:.4f}"
+                else:
+                    score_label = f"{score_type}: N/A"
                 st.caption(f"**{item.get('image_id', img_path.name)}** · {score_label}")
 
 

@@ -248,3 +248,56 @@ def get_m7_figures() -> Dict[str, Path]:
         return {}
     return {f.stem: f for f in m7_dir.glob("*.png")}
 
+
+# =============================================================================
+# MILESTONE 11: COMPREHENSIVE EXPERIMENTAL EVALUATION
+# =============================================================================
+
+def load_m11_summary() -> Optional[pd.DataFrame]:
+    """Loads Milestone 11 standardized benchmark summary table."""
+    json_path = ROOT / "experiments" / "results" / "m11" / "benchmark_summary.json"
+    csv_path = ROOT / "experiments" / "results" / "m11" / "benchmark_summary.csv"
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return pd.DataFrame(data)
+    elif csv_path.exists():
+        return pd.read_csv(csv_path)
+    return None
+
+
+def load_m11_bootstrap_ci() -> Optional[Dict[str, Any]]:
+    """Loads Milestone 11 scene-level bootstrap 95% confidence intervals."""
+    path = ROOT / "experiments" / "results" / "m11" / "statistical_bootstrap_ci.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_m11_paired_tests() -> Optional[List[Dict[str, Any]]]:
+    """Loads Milestone 11 paired Wilcoxon signed-rank hypothesis tests."""
+    path = ROOT / "experiments" / "results" / "m11" / "paired_statistical_tests.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_m11_ablation() -> Optional[Dict[str, Any]]:
+    """Loads Milestone 11 QAT-CD quality attenuation and false-alarm tradeoff matrix."""
+    path = ROOT / "experiments" / "results" / "m11" / "qat_ablation_analysis.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get_m11_figures() -> Dict[str, Path]:
+    """Returns mapping of available M11 publication figure files."""
+    m11_dir = ROOT / "experiments" / "figures" / "m11"
+    if not m11_dir.exists():
+        return {}
+    return {f.stem: f for f in sorted(m11_dir.glob("*.png"))}
+
+

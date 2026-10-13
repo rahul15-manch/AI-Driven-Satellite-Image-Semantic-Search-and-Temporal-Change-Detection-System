@@ -87,8 +87,8 @@ def test_int_m1_04_milestone_boundary_compliance():
     """INT-M1-04: Verify architectural boundaries and milestone governance compliance.
 
     Verifies:
-    1. Future milestones beyond M12 (M13+) are not implemented in src/.
-    2. The M1-M12 boundary is strictly preserved: M7, M8, M9, M10, M11, and M12 are recognized.
+    1. Future milestones beyond M13 (M14+) are not implemented in src/.
+    2. The M1-M13 boundary is strictly preserved: M7, M8, M9, M10, M11, M12, and M13 are recognized.
     3. Checkpoints and artifacts for implemented models are authentic (not empty or mock).
     """
     src_dir = Path("src")
@@ -105,16 +105,16 @@ def test_int_m1_04_milestone_boundary_compliance():
                 f"Boundary violation: Found future milestone term '{term}' in {py_file}."
             )
 
-    # Verify M13+ boundary: Future milestones beyond M12 are not implemented or checked in
-    checkpoints_m13 = Path("experiments/checkpoints/m13")
-    if checkpoints_m13.exists():
-        pts = list(checkpoints_m13.glob("*.pt")) + list(checkpoints_m13.glob("*.pth"))
-        assert len(pts) == 0, "M13 checkpoint found prematurely."
+    # Verify M14+ boundary: Future milestones beyond M13 are not implemented or checked in
+    checkpoints_m14 = Path("experiments/checkpoints/m14")
+    if checkpoints_m14.exists():
+        pts = list(checkpoints_m14.glob("*.pt")) + list(checkpoints_m14.glob("*.pth"))
+        assert len(pts) == 0, "M14 checkpoint found prematurely."
 
-    results_m13 = Path("experiments/results/m13")
-    if results_m13.exists():
-        res = list(results_m13.glob("*.csv")) + list(results_m13.glob("*.json"))
-        assert len(res) == 0, "M13 benchmark results found prematurely."
+    results_m14 = Path("experiments/results/m14")
+    if results_m14.exists():
+        res = list(results_m14.glob("*.csv")) + list(results_m14.glob("*.json"))
+        assert len(res) == 0, "M14 benchmark results found prematurely."
 
 
     # If M7 checkpoint is present, verify it is authentic and valid (not empty or mock)

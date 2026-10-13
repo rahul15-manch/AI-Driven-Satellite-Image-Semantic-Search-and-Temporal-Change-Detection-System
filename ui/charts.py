@@ -1,4 +1,6 @@
-"""Plotly and Matplotlib research charts for M4, M5, and M6 results."""
+"""Plotly and Matplotlib research charts for M4, M5, and M6 results.
+Redesigned with Earth-inspired palettes (Forest, Terracotta, Ochre, Moss, Sage, Bark).
+"""
 
 from __future__ import annotations
 
@@ -7,7 +9,6 @@ from typing import Dict, Any, Optional
 import pandas as pd
 import streamlit as st
 
-# We use Matplotlib / Seaborn or Streamlit native bar charts for 100% stable rendering
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
@@ -15,6 +16,8 @@ import matplotlib.ticker as mtick
 def plot_m4_recall_comparison(summary_df: pd.DataFrame) -> plt.Figure:
     """Generates grouped bar chart of R@1, R@5, R@10 across evaluated M4 methods."""
     fig, ax = plt.subplots(figsize=(10, 4.5), dpi=120)
+    fig.patch.set_facecolor('#F1EBE4')
+    ax.set_facecolor('#E3DAC9')
 
     # Filter out empty or duplicate rows if any
     methods = summary_df["method"].tolist()
@@ -25,12 +28,13 @@ def plot_m4_recall_comparison(summary_df: pd.DataFrame) -> plt.Figure:
     x = range(len(methods))
     width = 0.25
 
-    rects1 = ax.bar([i - width for i in x], r1, width, label="R@1 (%)", color="#2563eb")
-    rects2 = ax.bar([i for i in x], r5, width, label="R@5 (%)", color="#38bdf8")
-    rects3 = ax.bar([i + width for i in x], r10, width, label="R@10 (%)", color="#93c5fd")
+    # Earth palette: Forest Green, Olive Moss, Sage
+    rects1 = ax.bar([i - width for i in x], r1, width, label="R@1 (%)", color="#2F3E32", edgecolor="#1E2820", linewidth=0.8)
+    rects2 = ax.bar([i for i in x], r5, width, label="R@5 (%)", color="#6B7A65", edgecolor="#4D5848", linewidth=0.8)
+    rects3 = ax.bar([i + width for i in x], r10, width, label="R@10 (%)", color="#9DB198", edgecolor="#7A8E75", linewidth=0.8)
 
-    ax.set_ylabel("Recall Score (%)", fontsize=10, fontweight="bold")
-    ax.set_title("Milestone 4: Semantic Retrieval Recall Comparison (RSICD Test Gallery)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Recall Score (%)", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_title("Milestone 4: Semantic Retrieval Recall Comparison (RSICD Test Gallery)", fontsize=11, fontweight="bold", color="#2F3E32")
     ax.set_xticks(x)
     
     # Shorten method labels for readability
@@ -41,16 +45,20 @@ def plot_m4_recall_comparison(summary_df: pd.DataFrame) -> plt.Figure:
         .replace("CLIP + Prompt Ensemble", "CLIP +\nPrompt Ens.")
         for m in methods
     ]
-    ax.set_xticklabels(short_labels, fontsize=8.5)
-    ax.legend(loc="upper left", frameon=True)
-    ax.grid(axis="y", linestyle="--", alpha=0.4)
+    ax.set_xticklabels(short_labels, fontsize=8.5, color="#3E3B39")
+    ax.tick_params(colors="#3E3B39")
+    ax.legend(loc="upper left", frameon=True, facecolor="#FAF7F2", edgecolor="#BFAF9E")
+    ax.grid(axis="y", linestyle="--", alpha=0.35, color="#8A7E72")
     ax.set_ylim(0, 105)
 
     # Annotate R@1 bars
     for rect in rects1:
         h = rect.get_height()
         ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h),
-                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=7.5, fontweight="bold")
+                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=7.5, fontweight="bold", color="#2F3E32")
+
+    for spine in ax.spines.values():
+        spine.set_color('#BFAF9E')
 
     plt.tight_layout()
     return fig
@@ -59,15 +67,17 @@ def plot_m4_recall_comparison(summary_df: pd.DataFrame) -> plt.Figure:
 def plot_m4_latency_mrr(summary_df: pd.DataFrame) -> plt.Figure:
     """Generates Latency vs MRR Pareto trade-off scatter plot."""
     fig, ax = plt.subplots(figsize=(8, 4.2), dpi=120)
+    fig.patch.set_facecolor('#F1EBE4')
+    ax.set_facecolor('#E3DAC9')
 
     for _, row in summary_df.iterrows():
         lat = row["latency_mean_ms"]
         mrr = row["MRR"]
         name = row["method"]
-        color = "#dc2626" if "Leaky" in name else ("#16a34a" if "CLIP" in name else "#2563eb")
+        # Earth colors: Terracotta for leaky, Olive Moss for CLIP, Deep Bark for LOCO
+        color = "#C86B4D" if "Leaky" in name else ("#6B7A65" if "CLIP" in name else "#4A2E2B")
         
-        ax.scatter(lat, mrr, s=120, color=color, alpha=0.85, edgecolors="black", linewidth=1.2)
-        offset_y = 0.03 if "Leaky" not in name else -0.05
+        ax.scatter(lat, mrr, s=130, color=color, alpha=0.9, edgecolors="#3E3B39", linewidth=1.2)
         ax.annotate(
             name.split("(")[0].strip(),
             xy=(lat, mrr),
@@ -75,13 +85,19 @@ def plot_m4_latency_mrr(summary_df: pd.DataFrame) -> plt.Figure:
             textcoords="offset points",
             ha="center",
             fontsize=8,
-            fontweight="bold"
+            fontweight="bold",
+            color="#3E3B39"
         )
 
-    ax.set_xlabel("Mean Latency on CPU (ms)", fontsize=10, fontweight="bold")
-    ax.set_ylabel("Mean Reciprocal Rank (MRR)", fontsize=10, fontweight="bold")
-    ax.set_title("Milestone 4: Latency vs. Retrieval Accuracy Trade-off (CPU)", fontsize=11, fontweight="bold")
-    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.set_xlabel("Mean Latency on CPU (ms)", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_ylabel("Mean Reciprocal Rank (MRR)", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_title("Milestone 4: Latency vs. Retrieval Accuracy Trade-off (CPU)", fontsize=11, fontweight="bold", color="#2F3E32")
+    ax.tick_params(colors="#3E3B39")
+    ax.grid(True, linestyle="--", alpha=0.35, color="#8A7E72")
+
+    for spine in ax.spines.values():
+        spine.set_color('#BFAF9E')
+
     plt.tight_layout()
     return fig
 
@@ -94,6 +110,9 @@ def plot_m5_detector_comparison(m5_summary_df: pd.DataFrame) -> plt.Figure:
         df_frozen = m5_summary_df
 
     fig, ax = plt.subplots(figsize=(8.5, 4.2), dpi=120)
+    fig.patch.set_facecolor('#F1EBE4')
+    ax.set_facecolor('#E3DAC9')
+
     methods = df_frozen["method"].tolist()
     prec = [v * 100 for v in df_frozen["precision"]]
     rec = [v * 100 for v in df_frozen["recall"]]
@@ -103,18 +122,23 @@ def plot_m5_detector_comparison(m5_summary_df: pd.DataFrame) -> plt.Figure:
     x = range(len(methods))
     width = 0.18
 
-    ax.bar([i - 1.5 * width for i in x], prec, width, label="Precision (%)", color="#3b82f6")
-    ax.bar([i - 0.5 * width for i in x], rec, width, label="Recall (%)", color="#10b981")
-    ax.bar([i + 0.5 * width for i in x], f1, width, label="F1 Score (%)", color="#ef4444")
-    ax.bar([i + 1.5 * width for i in x], iou, width, label="IoU (%)", color="#8b5cf6")
+    # Earth palette: Forest Green, Olive Moss, Terracotta, Yellow Ochre
+    ax.bar([i - 1.5 * width for i in x], prec, width, label="Precision (%)", color="#2F3E32", edgecolor="#1E2820")
+    ax.bar([i - 0.5 * width for i in x], rec, width, label="Recall (%)", color="#6B7A65", edgecolor="#4D5848")
+    ax.bar([i + 0.5 * width for i in x], f1, width, label="F1 Score (%)", color="#C86B4D", edgecolor="#9C4E34")
+    ax.bar([i + 1.5 * width for i in x], iou, width, label="IoU (%)", color="#E1A95F", edgecolor="#B88544")
 
-    ax.set_ylabel("Metric Score (%)", fontsize=10, fontweight="bold")
-    ax.set_title("Milestone 5: Classical Detector Test Performance (Frozen tau*)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Metric Score (%)", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_title("Milestone 5: Classical Detector Test Performance (Frozen tau*)", fontsize=11, fontweight="bold", color="#2F3E32")
     ax.set_xticks(x)
     clean_labels = [m.replace("B1_", "B1: ").replace("B2_", "B2: ").replace("B3_", "B3: ").replace("M7_", "M7: ").replace("M8_", "M8: ").replace("_", " ") for m in methods]
-    ax.set_xticklabels(clean_labels, fontsize=9, fontweight="bold")
-    ax.legend(loc="upper left", frameon=True)
-    ax.grid(axis="y", linestyle="--", alpha=0.4)
+    ax.set_xticklabels(clean_labels, fontsize=9, fontweight="bold", color="#3E3B39")
+    ax.tick_params(colors="#3E3B39")
+    ax.legend(loc="upper left", frameon=True, facecolor="#FAF7F2", edgecolor="#BFAF9E")
+    ax.grid(axis="y", linestyle="--", alpha=0.35, color="#8A7E72")
+
+    for spine in ax.spines.values():
+        spine.set_color('#BFAF9E')
 
     plt.tight_layout()
     return fig
@@ -130,8 +154,12 @@ def plot_m6_f1_vs_severity(m6_df: pd.DataFrame, perturbation_name: str) -> Optio
     ctrl_df = m6_df[m6_df["perturbation"] == "control"]
 
     fig, ax = plt.subplots(figsize=(7, 3.8), dpi=120)
+    fig.patch.set_facecolor('#F1EBE4')
+    ax.set_facecolor('#E3DAC9')
+
     severities = ["control", "mild", "medium", "strong"]
-    color_map = {"B1_Pixel_Diff": "#2563eb", "B2_SSIM": "#dc2626", "B3_CVA": "#16a34a"}
+    # Earth colors: Deep Bark, Terracotta, Olive Moss
+    color_map = {"B1_Pixel_Diff": "#4A2E2B", "B2_SSIM": "#C86B4D", "B3_CVA": "#6B7A65"}
 
     for det in ["B1_Pixel_Diff", "B2_SSIM", "B3_CVA"]:
         f1_vals = []
@@ -143,13 +171,18 @@ def plot_m6_f1_vs_severity(m6_df: pd.DataFrame, perturbation_name: str) -> Optio
             v = sub_df[(sub_df["detector"] == det) & (sub_df["severity"] == sev)]["f1"].values
             f1_vals.append(v[0] if len(v) > 0 else None)
 
-        ax.plot(severities, f1_vals, marker="o", lw=2, label=det.replace("_", " "), color=color_map.get(det, "#000000"))
+        ax.plot(severities, f1_vals, marker="o", lw=2.2, label=det.replace("_", " "), color=color_map.get(det, "#3E3B39"))
 
-    ax.set_xlabel("Perturbation Severity", fontsize=10, fontweight="bold")
-    ax.set_ylabel("F1 Score", fontsize=10, fontweight="bold")
-    ax.set_title(f"F1 vs. Severity: {perturbation_name.replace('_', ' ').title()}", fontsize=11, fontweight="bold")
-    ax.grid(True, linestyle="--", alpha=0.4)
-    ax.legend(loc="best", frameon=True)
+    ax.set_xlabel("Perturbation Severity", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_ylabel("F1 Score", fontsize=10, fontweight="bold", color="#3E3B39")
+    ax.set_title(f"F1 vs. Severity: {perturbation_name.replace('_', ' ').title()}", fontsize=11, fontweight="bold", color="#2F3E32")
+    ax.tick_params(colors="#3E3B39")
+    ax.grid(True, linestyle="--", alpha=0.35, color="#8A7E72")
+    ax.legend(loc="best", frameon=True, facecolor="#FAF7F2", edgecolor="#BFAF9E")
+
+    for spine in ax.spines.values():
+        spine.set_color('#BFAF9E')
+
     plt.tight_layout()
     return fig
 

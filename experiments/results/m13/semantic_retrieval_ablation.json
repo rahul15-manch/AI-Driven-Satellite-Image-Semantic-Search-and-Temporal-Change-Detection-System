@@ -1,0 +1,97 @@
+{
+  "dataset": "RSICD Test Gallery (1,093 images, 5,465 human captions)",
+  "protocol_investigation": {
+    "finding": "Asymmetric Information Boundaries between Lexical and Multimodal Protocols",
+    "bm25_loco_leakage_mechanism": "In RSICD, each image has 5 captions written by human annotators. In the Leave-One-Caption-Out (LOCO) BM25 protocol, the query caption is held out, but the 4 remaining human captions for that exact target image remain in the candidate text gallery. Because crowd-workers frequently repeat distinctive phrasing (e.g. 'many airplanes parked at terminal gates'), BM25 LOCO achieves R@1=42.12% through sibling caption lexical overlap.",
+    "bm25_metadata_control": "When all human captions are removed from the gallery and only category metadata labels are indexed (e.g. 'airport', 'parking'), BM25 lexical recall drops sharply to R@1=1.50% (MRR=0.0618).",
+    "clip_cross_modal_integrity": "CLIP ViT-B/32 operates under genuine cross-modal conditions where the candidate gallery contains zero human text (only 512-dimensional visual image embeddings). Query text is mapped directly into visual latent space, achieving R@1=5.45% (R@10=27.89%, MRR=0.1307) without text-text leakage.",
+    "prompt_ensemble_effect": "Averaging 5 domain-specific remote sensing prompt templates yields R@1=5.14% and R@10=28.01% with 14.71 ms CPU latency (vs 7.46 ms single prompt), demonstrating template robustness at 1.97x compute cost.",
+    "missing_reranking_status": "CLIP + Metadata Reranking does not exist in the repository codebase. Milestone M7 was designated and executed strictly as Learned Change Detection (FC-Siam-diff). The retrieval reranking feature remains unexecuted and is formally marked NOT IMPLEMENTED."
+  },
+  "records": [
+    {
+      "method_id": "bm25_leave_one_caption_out",
+      "display_name": "BM25 (Leave-One-Caption-Out)",
+      "modality_type": "Lexical (Text-Text)",
+      "gallery_information": "4 remaining human captions per target image (query excluded); 5 captions for non-target images",
+      "protocol": "Leave-One-Caption-Out Caption-Indexed",
+      "R@1": 0.4212259835315645,
+      "R@5": 0.6080512351326623,
+      "R@10": 0.6786825251601097,
+      "MRR": 0.5111602894760524,
+      "mean_latency_ms": 1.4968126846360974,
+      "peak_rss_mb": 336.578125,
+      "implementation_status": "VERIFIED_IMPLEMENTED"
+    },
+    {
+      "method_id": "bm25_category_metadata",
+      "display_name": "BM25 (Category Metadata)",
+      "modality_type": "Lexical (Text-Text)",
+      "gallery_information": "Category label text only (e.g., 'airport', 'parking'); zero test captions",
+      "protocol": "Category Metadata Lexical (Zero Captions in Gallery)",
+      "R@1": 0.015004574565416285,
+      "R@5": 0.07301006404391583,
+      "R@10": 0.1434583714547118,
+      "MRR": 0.0617516504914551,
+      "mean_latency_ms": 0.12612503429409117,
+      "peak_rss_mb": 343.6875,
+      "implementation_status": "VERIFIED_IMPLEMENTED"
+    },
+    {
+      "method_id": "bm25_original_diagnostic___leaky",
+      "display_name": "BM25 (Original Diagnostic / Leaky)",
+      "modality_type": "Lexical (Text-Text)",
+      "gallery_information": "All 5 human captions concatenated per image (exact query caption present in target)",
+      "protocol": "Original Caption-Indexed (Target Text Overlap Leakage)",
+      "R@1": 0.8565416285452881,
+      "R@5": 0.9637694419030192,
+      "R@10": 0.9857273559011894,
+      "MRR": 0.9027811693407404,
+      "mean_latency_ms": 1.463609605016245,
+      "peak_rss_mb": 357.421875,
+      "implementation_status": "VERIFIED_IMPLEMENTED"
+    },
+    {
+      "method_id": "clip_vit_b_32",
+      "display_name": "CLIP ViT-B/32",
+      "modality_type": "Cross-Modal (Zero-Shot)",
+      "gallery_information": "Visual image pixels only (L2-normalized 512D embeddings in FAISS); zero text descriptions in gallery",
+      "protocol": "Zero-Shot Image-Text Multimodal Retrieval",
+      "R@1": 0.0545288197621226,
+      "R@5": 0.17712717291857275,
+      "R@10": 0.2788655077767612,
+      "MRR": 0.13074806730165667,
+      "mean_latency_ms": 7.462886685170815,
+      "peak_rss_mb": 580.796875,
+      "implementation_status": "VERIFIED_IMPLEMENTED"
+    },
+    {
+      "method_id": "clip_plus_prompt_ensemble",
+      "display_name": "CLIP + Prompt Ensemble",
+      "modality_type": "Cross-Modal (Zero-Shot)",
+      "gallery_information": "Visual image pixels only (L2-normalized 512D embeddings in FAISS); 5 prompt-averaged query vectors",
+      "protocol": "Prompt Ensemble Multimodal Retrieval (5 Frozen RS Templates)",
+      "R@1": 0.05141811527904849,
+      "R@5": 0.16999085086916743,
+      "R@10": 0.28014638609332115,
+      "MRR": 0.12680480135818797,
+      "mean_latency_ms": 14.713081759982742,
+      "peak_rss_mb": 327.5,
+      "implementation_status": "VERIFIED_IMPLEMENTED"
+    },
+    {
+      "method_id": "clip_metadata_rerank",
+      "display_name": "CLIP + Metadata Reranking",
+      "modality_type": "Hybrid Cross-Modal Reranking",
+      "gallery_information": "Visual image embeddings + Category metadata text reranking",
+      "protocol": "Zero-shot cross-modal retrieval followed by category metadata rescoring",
+      "R@1": null,
+      "R@5": null,
+      "R@10": null,
+      "MRR": null,
+      "mean_latency_ms": null,
+      "peak_rss_mb": null,
+      "implementation_status": "NOT_IMPLEMENTED_SCOPE_DISCREPANCY"
+    }
+  ]
+}

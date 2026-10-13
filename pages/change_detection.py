@@ -25,6 +25,11 @@ from utils.result_loader import (
     load_m5_per_image_metrics,
     get_available_levir_test_pairs,
     get_m5_figures,
+    load_m11_summary,
+    load_m11_bootstrap_ci,
+    load_m11_paired_tests,
+    load_m11_ablation,
+    get_m11_figures,
 )
 from utils.config_loader import get_project_root, load_m5_config
 
@@ -259,28 +264,92 @@ def render_change_detection_page():
         st.write("")
         show_diagnostics = st.checkbox("Show Error Overlay", value=True)
 
-    render_frozen_threshold_notice(threshold_val=current_tau, detector_name=current_det_name)
+    # QAT-CD Gating Configuration Control
+    selected_gamma = 0.0
+    if current_det_name == "M10_QAT_CD" and m10_det is not None:
+        col_gamma_sel, col_gamma_exp = st.columns([1.5, 2.5])
+        with col_gamma_sel:
+            gamma_options = [
+                "Calibrated: gamma = 0.0 (Optimal F1 on LEVIR-CD Val)",
+                "Exploratory active gating: gamma = 0.30 (FP Reduction Trade-off)",
+            ]
+            gamma_choice = st.selectbox(
+                "QAT-CD Gating Configuration (gamma):",
+                gamma_options,
+                index=0,
+                help="Calibrated gamma=0.0 maintains unweighted F1. Exploratory gamma=0.30 attenuates detections near boundary using defect discrepancy."
+            )
+            selected_gamma = 0.0 if "0.0" in gamma_choice else 0.30
+            m10_det.gamma = selected_gamma
+
+        with col_gamma_exp:
+            if selected_gamma > 0.0:
+                st.info(
+                    "**Exploratory Active Gating Note:** As documented in Milestone M11, active gating (gamma = 0.30) "
+                    "reduces false-positive pixels by approximately **29.19%** relative to M9 BIT-CD, but sacrifices recall "
+                    "and unweighted F1. This is an operational trade-off for high-precision scenarios, not an unconditional performance improvement."
+                )
+            else:
+                st.caption(
+                    "Calibrated configuration (gamma = 0.0): Evaluated at validation-calibrated operating point for optimal unweighted F1."
+                )
+
+    # Optional Manual Decision-Threshold Override
+    col_ov_check, col_ov_val = st.columns([1.5, 2.5])
+    with col_ov_check:
+        override_threshold = st.checkbox(
+            "Manual Threshold Override (Experimental)",
+            value=False,
+            help="Override the validation-calibrated decision threshold tau for this test inference."
+        )
+
+    if override_threshold:
+        with col_ov_val:
+            effective_tau = st.slider(
+                "Decision Threshold Override (tau):",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(current_tau),
+                step=0.01,
+                help="Manual decision threshold override. Valid range: [0.0, 1.0]. Does not modify saved benchmark artifacts."
+            )
+        st.warning(
+            f"⚠️ **Experimental Threshold Override Active:** Evaluating with tau = **{effective_tau:.4f}** "
+            f"(Validation-selected threshold was tau* = **{current_tau:.4f}**). "
+            f"This user override does not modify saved validation thresholds or benchmark results."
+        )
+    else:
+        effective_tau = current_tau
+        render_frozen_threshold_notice(threshold_val=current_tau, detector_name=current_det_name)
+
     if current_det_name == "M10_QAT_CD" and m10_meta:
+        tau_label = f"Overridden tau: {effective_tau:.4f} (Calibrated tau*: {current_tau:.4f})" if override_threshold else f"Frozen Threshold tau*: {current_tau:.4f}"
+        gamma_label = f"Active gamma: {selected_gamma:.2f}" if selected_gamma > 0.0 else f"Calibrated gamma*: {m10_meta.get('calibrated_gamma', 0.0):.2f}"
         st.caption(
             f"Architecture: QAT-CD (Base: BIT-CD 552,097 params, 0 learned quality params) | "
-            f"Calibrated gamma*: {m10_meta.get('calibrated_gamma', 0.0):.2f} | "
-            f"Frozen Threshold tau*: {current_tau:.4f}"
+            f"{gamma_label} | {tau_label}"
         )
     elif current_det_name == "M9_BIT_CD" and m9_meta:
+        tau_label = f"Overridden tau: {effective_tau:.4f} (Frozen tau*: {current_tau:.4f})" if override_threshold else f"Frozen Threshold tau*: {current_tau:.4f}"
         st.caption(
             f"Architecture: BIT-CD (552,097 parameters) | Best Val F1: {m9_meta.get('best_val_f1', 0.0):.4f} | "
-            f"Frozen Threshold tau*: {current_tau:.4f}"
+            f"{tau_label}"
         )
     elif current_det_name == "M8_SNUNet" and m8_meta:
+        tau_label = f"Overridden tau: {effective_tau:.4f} (Frozen tau*: {current_tau:.4f})" if override_threshold else f"Frozen Threshold tau*: {current_tau:.4f}"
         st.caption(
             f"Architecture: SNUNet-CD (563,377 parameters) | Best Val F1: {m8_meta.get('best_val_f1', 0.0):.4f} | "
-            f"Frozen Threshold tau*: {current_tau:.4f}"
+            f"{tau_label}"
         )
     elif current_det_name == "M7_FC_Siam_diff" and m7_meta:
+        tau_label = f"Overridden tau: {effective_tau:.4f} (Frozen tau*: {current_tau:.4f})" if override_threshold else f"Frozen Threshold tau*: {current_tau:.4f}"
         st.caption(
             f"Architecture: FC-Siam-diff (1,471,409 parameters) | Best Val F1: {m7_meta.get('best_val_f1', 0.0):.4f} | "
-            f"Frozen Threshold tau*: {current_tau:.4f}"
+            f"{tau_label}"
         )
+    else:
+        tau_label = f"Overridden tau: {effective_tau:.4f} (Frozen tau*: {current_tau:.4f})" if override_threshold else f"Frozen Threshold tau*: {current_tau:.4f}"
+        st.caption(f"Method: {current_det_name} | {tau_label}")
 
     # Load pair images
     p_t1 = ROOT / "data" / "raw" / "levir_cd" / "test" / "A" / f"{selected_pair}.png"
@@ -326,8 +395,8 @@ def render_change_detection_page():
     else:
         full_diff = base_diff
 
-    # Apply frozen decision threshold
-    pred_mask = (full_diff >= current_tau).astype(np.uint8)
+    # Apply decision threshold to continuous difference/probability map
+    pred_mask = (full_diff >= effective_tau).astype(np.uint8)
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
     # Compute pair-level confusion matrix & metrics
@@ -418,156 +487,211 @@ def render_change_detection_page():
                 )
 
     # =========================================================================
-    # SECTION 2: OFFICIAL BENCHMARK RESULTS TABLE
+    # SECTION 2: MILESTONE M11 COMPREHENSIVE RESEARCH EVIDENCE & BENCHMARKS
     # =========================================================================
     st.markdown("---")
-    m11_comp_file = ROOT / "experiments" / "results" / "m11" / "benchmark_summary.json"
-    m10_comp_file = ROOT / "experiments" / "results" / "m10" / "comparison_m5_to_m10.json"
-    m9_comp_file = ROOT / "experiments" / "results" / "m9" / "comparison_m5_m7_m8_m9.json"
-    m8_comp_file = ROOT / "experiments" / "results" / "m8" / "comparison_m5_m7_m8.json"
-    m7_comp_file = ROOT / "experiments" / "results" / "m7" / "comparison_m5_m7.json"
+    st.markdown("### Milestone M11: Comprehensive Research Evidence & Statistical Benchmarking")
+    st.markdown(
+        """
+        Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
+        All models operate under standardized CPU benchmarking, identical patch reconstruction pipelines, and strictly frozen validation-calibrated parameters.
+        """
+    )
 
-    if m11_comp_file.exists():
-        import json
-        with open(m11_comp_file, "r", encoding="utf-8") as f:
-            comp_records = json.load(f)
-        summary_df = pd.DataFrame(comp_records)
-        if "method" not in summary_df.columns and "display_name" in summary_df.columns:
-            summary_df["method"] = summary_df["display_name"]
-        if "mean_pair_latency_ms" not in summary_df.columns and "mean_latency_ms" in summary_df.columns:
-            summary_df["mean_pair_latency_ms"] = summary_df["mean_latency_ms"]
-        st.markdown("### Official Benchmark Results (Milestone M11 Comprehensive Evaluation)")
+    # Mandatory Research Disclosures
+    with st.expander("ℹ️ Mandatory Research Disclosures & Scientific Governance", expanded=True):
         st.markdown(
             """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Compares classical non-learned baselines (B1 Pixel Diff, B2 SSIM, B3 CVA) with learned Siamese U-Net (M7 FC-Siam-diff), dense Siamese network (M8 SNUNet-CD), attention-based Bitemporal Image Transformer (M9 BIT-CD), and Quality-Aware Temporal Change Detection (M10 QAT-CD) under standardized CPU benchmarking and strictly frozen validation thresholds.
-            Loaded dynamically from `experiments/results/m11/benchmark_summary.json`.
-            """
-        )
-    elif m10_comp_file.exists():
-        import json
-        with open(m10_comp_file, "r", encoding="utf-8") as f:
-            comp_records = json.load(f)
-        summary_df = pd.DataFrame(comp_records)
-        st.markdown("### Official Benchmark Results (Classical vs. FC-Siam-diff vs. SNUNet-CD vs. BIT-CD vs. QAT-CD)")
-        st.markdown(
-            """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff), dense Siamese network (M8 SNUNet-CD), attention-based Bitemporal Image Transformer (M9 BIT-CD), and Quality-Aware Temporal Change Detection (M10 QAT-CD) under strictly frozen validation parameters.
-            Loaded dynamically from `experiments/results/m10/comparison_m5_to_m10.json`.
-            """
-        )
-    elif m9_comp_file.exists():
-        import json
-        with open(m9_comp_file, "r", encoding="utf-8") as f:
-            comp_records = json.load(f)
-        summary_df = pd.DataFrame(comp_records)
-        st.markdown("### Official Benchmark Results (Classical vs. FC-Siam-diff vs. SNUNet-CD vs. BIT-CD)")
-        st.markdown(
-            """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff), dense Siamese network (M8 SNUNet-CD), and attention-based Bitemporal Image Transformer (M9 BIT-CD) under strictly frozen validation thresholds $\\tau^*$.
-            Loaded dynamically from `experiments/results/m9/comparison_m5_m7_m8_m9.json`.
+            1. **Test-Set Reuse Disclosure:** The LEVIR-CD test split was inspected and referenced during earlier development milestones; the reported test results reflect standard reproducible benchmark evaluation on the designated partition rather than untouched, independent out-of-distribution generalization.
+            2. **Exploratory QAT-CD Active Gating Disclosure:** The active gating configuration ($\gamma = 0.30$) represents an operational trade-off: it eliminates 573,553 false-positive pixels (-29.19% relative to M9 BIT-CD) at the cost of 336,213 true-positive pixels (-9.07%), increasing precision to 70.78% (+5.43 pp) but sacrificing recall (49.30%, -4.92 pp) and unweighted F1 (0.5812 vs 0.5927). It is an operational tool for high-precision scenarios, not an unconditional benchmark improvement.
+            3. **SNUNet-CD False Alarms Disclosure:** Under standardized CPU benchmarking with frozen validation thresholding, SNUNet-CD generated **53,485,389 false-positive pixels** (a 39.85% false alarm rate across the test set), highlighting severe over-prediction when deployed out-of-domain.
             """
         )
 
-    elif m8_comp_file.exists():
-        import json
-        with open(m8_comp_file, "r", encoding="utf-8") as f:
-            comp_records = json.load(f)
-        summary_df = pd.DataFrame(comp_records)
-        st.markdown("### Official Benchmark Results (Classical Baselines vs. M7 FC-Siam-diff vs. M8 SNUNet-CD)")
-        st.markdown(
-            """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff) and dense Siamese network (M8 SNUNet-CD) under strictly frozen validation thresholds $\\tau^*$.
-            Loaded dynamically from `experiments/results/m8/comparison_m5_m7_m8.json`.
-            """
-        )
-    elif m7_comp_file.exists():
-        import json
-        with open(m7_comp_file, "r", encoding="utf-8") as f:
-            comp_records = json.load(f)
-        summary_df = pd.DataFrame(comp_records)
-        st.markdown("### Official Benchmark Results (Classical Baselines vs. M7 FC-Siam-diff)")
-        st.markdown(
-            """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff) under strictly frozen validation thresholds $\\tau^*$.
-            Loaded dynamically from `experiments/results/m7/comparison_m5_m7.json`.
-            """
-        )
-    else:
-        summary_df = load_m5_summary()
-        st.markdown("### Official Benchmark Results (Milestone 5)")
-        st.markdown(
-            """
-            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-            Loaded dynamically from `experiments/results/m5/summary.json`.
-            """
-        )
+    tab_bench, tab_ci, tab_paired, tab_abl, tab_figs = st.tabs([
+        "Benchmark Comparison",
+        "Bootstrap Confidence Intervals",
+        "Paired Statistical Tests",
+        "QAT-CD Ablation Analysis",
+        "Publication Figures Gallery",
+    ])
 
-    if summary_df is not None and not summary_df.empty:
-        # Filter and format
-        disp_df = summary_df.copy()
-        disp_df["Precision (%)"] = disp_df["precision"].apply(lambda v: f"{v*100:.2f}%")
-        disp_df["Recall (%)"] = disp_df["recall"].apply(lambda v: f"{v*100:.2f}%")
-        disp_df["F1 Score"] = disp_df["f1"].apply(lambda v: f"{v:.4f}")
-        disp_df["IoU (%)"] = disp_df["iou"].apply(lambda v: f"{v*100:.2f}%")
-        disp_df["Accuracy (%)"] = disp_df["accuracy"].apply(lambda v: f"{v*100:.2f}%")
-        disp_df["Mean Latency (ms)"] = disp_df["mean_pair_latency_ms"].apply(lambda v: f"{v:.1f}")
-        disp_df["Peak RAM (MB)"] = disp_df["peak_rss_mb"].apply(lambda v: f"{v:.1f}")
-        disp_df["Threshold tau"] = disp_df["threshold_value"].apply(lambda v: f"{v:.4f}")
+    with tab_bench:
+        summary_df = load_m11_summary()
+        if summary_df is not None and not summary_df.empty:
+            disp_df = summary_df.copy()
+            if "method" not in disp_df.columns and "display_name" in disp_df.columns:
+                disp_df["method"] = disp_df["display_name"]
+            if "mean_pair_latency_ms" not in disp_df.columns and "mean_latency_ms" in disp_df.columns:
+                disp_df["mean_pair_latency_ms"] = disp_df["mean_latency_ms"]
 
-        st.dataframe(
-            disp_df[[
-                "method",
+            disp_df["Precision (%)"] = disp_df["precision"].apply(lambda v: f"{v*100:.2f}%")
+            disp_df["Recall (%)"] = disp_df["recall"].apply(lambda v: f"{v*100:.2f}%")
+            disp_df["F1 Score"] = disp_df["f1"].apply(lambda v: f"{v:.4f}")
+            disp_df["IoU (%)"] = disp_df["iou"].apply(lambda v: f"{v*100:.2f}%")
+            disp_df["Accuracy (%)"] = disp_df["accuracy"].apply(lambda v: f"{v*100:.2f}%")
+            disp_df["Mean Latency (ms)"] = disp_df["mean_pair_latency_ms"].apply(lambda v: f"{v:.1f}")
+            disp_df["Peak RAM (MB)"] = disp_df["peak_rss_mb"].apply(lambda v: f"{v:.1f}")
+            disp_df["Threshold tau"] = disp_df["threshold_value"].apply(lambda v: f"{v:.4f}")
+
+            cols_to_show = [
+                "display_name",
+                "architecture_type",
+                "parameters",
                 "threshold_source",
                 "Threshold tau",
                 "Precision (%)",
                 "Recall (%)",
                 "F1 Score",
                 "IoU (%)",
+                "Accuracy (%)",
                 "Mean Latency (ms)",
                 "Peak RAM (MB)",
-            ]],
-            use_container_width=True,
-            hide_index=True,
+            ]
+            valid_cols = [c for c in cols_to_show if c in disp_df.columns]
+            st.dataframe(disp_df[valid_cols], use_container_width=True, hide_index=True)
+
+            st.pyplot(plot_m5_detector_comparison(disp_df))
+        else:
+            st.warning("Benchmark summary artifact not found at experiments/results/m11/benchmark_summary.json.")
+
+    with tab_ci:
+        st.markdown("#### 95% Confidence Intervals via Scene-Level Bootstrap")
+        st.caption(
+            "Computed from B = 1,000 bootstrap resamples of the N = 128 LEVIR-CD test scenes. "
+            "Reported values represent empirical 2.5th and 97.5th percentiles of scene-level aggregations."
         )
+        ci_dict = load_m11_bootstrap_ci()
+        if ci_dict:
+            ci_rows = []
+            for model_key, data in ci_dict.items():
+                for metric_name in ["precision", "recall", "f1", "iou", "macro_f1"]:
+                    if metric_name in data:
+                        m = data[metric_name]
+                        ci_rows.append({
+                            "Model": model_key.replace("_", " "),
+                            "Metric": metric_name.upper().replace("_", "-"),
+                            "Mean": round(float(m.get("mean", 0.0)), 4),
+                            "95% CI Lower": round(float(m.get("ci_lower", 0.0)), 4),
+                            "95% CI Upper": round(float(m.get("ci_upper", 0.0)), 4),
+                        })
+            if ci_rows:
+                df_ci = pd.DataFrame(ci_rows)
+                st.dataframe(df_ci, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Bootstrap confidence interval records are empty.")
+        else:
+            st.warning("Bootstrap confidence interval artifact not found at experiments/results/m11/statistical_bootstrap_ci.json.")
 
-        # Plot comparison chart
-        st.pyplot(plot_m5_detector_comparison(summary_df))
-    else:
-        st.warning("Benchmark results not found.")
+    with tab_paired:
+        st.markdown("#### Paired Wilcoxon Signed-Rank Hypothesis Tests")
+        st.caption(
+            "Two-sided non-parametric paired tests evaluated across the matched N = 128 test scenes. "
+            "Significance threshold alpha = 0.05. Tests whether performance differences between model pairs are statistically significant."
+        )
+        paired_list = load_m11_paired_tests()
+        if paired_list:
+            p_rows = []
+            for item in paired_list:
+                p_rows.append({
+                    "Model A": item.get("model_a", "").replace("_", " "),
+                    "Model B": item.get("model_b", "").replace("_", " "),
+                    "N Scenes": item.get("n_scenes", 128),
+                    "Mean F1 (A)": round(float(item.get("mean_f1_a", 0.0)), 4),
+                    "Mean F1 (B)": round(float(item.get("mean_f1_b", 0.0)), 4),
+                    "F1 Delta (A - B)": f"{float(item.get('f1_delta_mean', 0.0)):+.4f}",
+                    "Wilcoxon W": round(float(item.get("wilcoxon_stat_f1", 0.0)), 1),
+                    "p-value": f"{float(item.get('wilcoxon_pval_f1', 0.0)):.2e}",
+                    "Significant (p < 0.05)": "Yes" if item.get("significant_at_05_f1") else "No",
+                })
+            if p_rows:
+                df_p = pd.DataFrame(p_rows)
+                st.dataframe(df_p, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Paired test records are empty.")
+        else:
+            st.warning("Paired hypothesis test artifact not found at experiments/results/m11/paired_statistical_tests.json.")
 
-    # =========================================================================
-    # SECTION 3: VALIDATION CURVES & QUALITATIVE FIGURES
-    # =========================================================================
-    st.markdown("### Precomputed Research Figures (Milestone 5)")
-    m5_figs = get_m5_figures()
+    with tab_abl:
+        st.markdown("#### Quality-Aware Gating (QAT-CD) Ablation Study")
+        st.caption(
+            "Evaluation of individual defect discrepancy signals (Registration, Illumination, Sharpness) and "
+            "active gating strength against the baseline BIT-CD (gamma = 0.0) on 128 LEVIR-CD test pairs (134.2M pixels)."
+        )
+        abl_dict = load_m11_ablation()
+        if abl_dict and "ablation_conditions" in abl_dict:
+            abl_rows = []
+            for cond_name, cdata in abl_dict["ablation_conditions"].items():
+                m = cdata.get("metrics", {})
+                abl_rows.append({
+                    "Ablation Condition": cond_name.replace("_", " "),
+                    "Precision": f"{float(m.get('precision', 0.0))*100:.2f}%",
+                    "Recall": f"{float(m.get('recall', 0.0))*100:.2f}%",
+                    "F1 Score": f"{float(m.get('f1', 0.0)):.4f}",
+                    "IoU": f"{float(m.get('iou', 0.0))*100:.2f}%",
+                    "FP Reduction (px)": f"{int(cdata.get('fp_reduction_pixels', 0)):,}",
+                    "FP Reduction (%)": f"{float(cdata.get('fp_reduction_percent', 0.0)):.2f}%",
+                    "TP Loss (px)": f"{int(cdata.get('tp_loss_pixels', 0)):,}",
+                    "TP Loss (%)": f"{float(cdata.get('tp_loss_percent', 0.0)):.2f}%",
+                    "Benefit Ratio (FP/TP)": f"{float(cdata.get('operational_benefit_ratio', 0.0)):.2f}x",
+                })
+            df_abl = pd.DataFrame(abl_rows)
+            st.dataframe(df_abl, use_container_width=True, hide_index=True)
 
-    tab_curves, tab_samples = st.tabs(["Validation Threshold Curves", "Qualitative Test Comparisons"])
+            interp = abl_dict.get("operational_interpretation", "")
+            if interp:
+                st.info(f"**Operational Analysis:** {interp}")
+        else:
+            st.warning("QAT ablation artifact not found at experiments/results/m11/qat_ablation_analysis.json.")
 
-    with tab_curves:
-        thresh_fig = m5_figs.get("validation_threshold_curves")
-        if thresh_fig:
+    with tab_figs:
+        st.markdown("#### Publication-Grade Empirical Research Figures")
+        m11_figs = get_m11_figures()
+        if m11_figs:
+            captions_map = {
+                "f1_iou_benchmark_bars": "Figure 1: Comparative Test Benchmark (F1 score and IoU across all 7 evaluated detectors on LEVIR-CD test split).",
+                "cpu_latency_vs_f1": "Figure 2: CPU Latency vs. F1 Trade-off on Commodity Hardware (ms per 1024x1024 pair on CPU).",
+                "precision_recall_tradeoff": "Figure 3: Precision-Recall Trade-off Curves across classical baselines and learned architectures.",
+                "false_positive_reduction_log": "Figure 4: False-Alarm Magnitude (Log-Scale False Positive Pixels), showing SNUNet-CD false alarms vs. learned models.",
+                "per_scene_f1_distribution": "Figure 5: Scene-Level F1 Score Distribution boxplots across the 128 LEVIR-CD test pairs.",
+                "qat_ablation_tradeoff": "Figure 6: Quality Gating Trade-Off: False Positive Reduction vs. True Positive Loss across ablation conditions.",
+                "cross_model_robustness": "Figure 7: Non-Ground Perturbation Sensitivity under illumination, blur, and registration shift perturbations.",
+            }
+            fig_options = list(m11_figs.keys())
+            selected_fig_key = st.selectbox(
+                "Select Milestone M11 Publication Figure:",
+                fig_options,
+                format_func=lambda k: captions_map.get(k, k.replace("_", " ").title()),
+                index=0,
+            )
+            fig_path = m11_figs[selected_fig_key]
             display_research_figure(
-                thresh_fig,
-                caption="Validation Sweep Curves across B1, B2, and B3 showing optimal F1 thresholds (crimson curve) calibrated strictly on the 64 validation pairs."
+                fig_path,
+                caption=captions_map.get(selected_fig_key, fig_path.name)
             )
         else:
-            st.info("Validation threshold curves figure not found.")
+            st.warning("Publication figures not found in experiments/figures/m11/.")
 
-    with tab_samples:
-        q_options = [k for k in m5_figs.keys() if "qualitative_comparison" in k]
-        if q_options:
-            q_sel = st.selectbox("Select Qualitative Research Figure:", q_options, index=0)
-            display_research_figure(
-                m5_figs[q_sel],
-                caption=f"Deterministic Qualitative Research Comparison ({q_sel})."
-            )
-        else:
-            st.info("No precomputed qualitative comparison figures found in experiments/figures/m5/.")
+        # Preserved M5 Historical Figures Expander
+        with st.expander("Historical Milestone 5 Precomputed Figures (Threshold Curves & Baselines)", expanded=False):
+            m5_figs = get_m5_figures()
+            if m5_figs:
+                m5_sub_curves, m5_sub_samples = st.tabs(["Validation Threshold Curves", "Qualitative Comparisons"])
+                with m5_sub_curves:
+                    thresh_fig = m5_figs.get("validation_threshold_curves")
+                    if thresh_fig:
+                        display_research_figure(
+                            thresh_fig,
+                            caption="Validation Sweep Curves across B1, B2, and B3 showing optimal F1 thresholds calibrated on validation pairs."
+                        )
+                with m5_sub_samples:
+                    q_options = [k for k in m5_figs.keys() if "qualitative_comparison" in k]
+                    if q_options:
+                        q_sel = st.selectbox("Select Qualitative Research Figure (M5):", q_options, index=0)
+                        display_research_figure(
+                            m5_figs[q_sel],
+                            caption=f"Deterministic Qualitative Research Comparison ({q_sel})."
+                        )
 
 
 if __name__ == "__main__":

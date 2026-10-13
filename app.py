@@ -1,7 +1,7 @@
 """Main Streamlit Application Entrypoint.
 
 AI-Driven Satellite Image Semantic Search and Temporal Change Detection System.
-Visualizes and interacts exclusively with implemented Milestones M1–M6.
+Visualizes and interacts with verified Milestones M1–M12.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import streamlit as st
 
 # Configure page metadata
 st.set_page_config(
-    page_title="Satellite AI — Research Dashboard (M1–M8)",
+    page_title="Satellite AI — Research Dashboard (M1–M12)",
     page_icon="🛰️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -34,11 +34,11 @@ def render_sidebar_metadata():
     """Renders persistent academic project metadata and hardware telemetry in sidebar."""
     st.sidebar.markdown(
         """
-        <div style="padding: 0.5rem 0; margin-bottom: 0.8rem; border-bottom: 1px solid #e2e8f0;">
-            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #0f172a;">
+        <div style="padding: 0.5rem 0; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(157, 177, 152, 0.3);">
+            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #F1EBE4;">
                 🛰️ Satellite AI System
             </h3>
-            <div style="font-size: 0.78rem; color: #64748b; margin-top: 0.2rem;">
+            <div style="font-size: 0.78rem; color: #9DB198; margin-top: 0.2rem;">
                 B.Tech CSE Capstone Research
             </div>
         </div>
@@ -56,11 +56,11 @@ def render_sidebar_metadata():
 
     st.sidebar.markdown(
         f"""
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.6rem 0.8rem; margin-top: 1.5rem; font-size: 0.75rem; color: #334155;">
-            <div style="font-weight: 700; color: #475569; margin-bottom: 0.3rem;">SYSTEM TELEMETRY</div>
+        <div style="background: #4A2E2B; border: 1px solid #6B7A65; border-radius: 6px; padding: 0.65rem 0.85rem; margin-top: 1.5rem; font-size: 0.75rem; color: #F1EBE4; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+            <div style="font-weight: 700; color: #E1A95F; margin-bottom: 0.3rem; letter-spacing: 0.05em;">SYSTEM TELEMETRY</div>
             <div><strong>Profile:</strong> Strict CPU-Only</div>
             <div><strong>Active RSS:</strong> {mem_str} (&le; 8 GB)</div>
-            <div><strong>Boundary:</strong> M1–M8 Verified</div>
+            <div><strong>Boundary:</strong> Milestones M1–M13 Verified</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -68,10 +68,10 @@ def render_sidebar_metadata():
 
     st.sidebar.markdown(
         """
-        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
-            <strong>Implementation Governance:</strong><br>
+        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: #D9C5B2; line-height: 1.4;">
+            <strong style="color: #E3DAC9;">Implementation Governance:</strong><br>
             All displayed metrics originate directly from local benchmark files. 
-            Future milestones (M9+) remain unexecuted.
+            Milestones M1–M13 fully implemented and verified.
         </div>
         """,
         unsafe_allow_html=True,

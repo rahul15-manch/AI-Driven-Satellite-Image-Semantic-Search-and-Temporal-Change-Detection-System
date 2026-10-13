@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-Driven Satellite Image Semantic Search and Temporal Change Detection Research Dashboard">
+  <title>Satellite AI — Semantic Search & Change Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header & Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 3a9 9 0 0 1 9 9"/>
+            <path d="M3 12h18"/>
+            <path d="M12 3v18"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Satellite AI Research System</h1>
+          <span class="brand-tag">Milestone 12 Prototype &bull; CPU Execution</span>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Main Navigation">
+        <button class="nav-btn active" data-tab="search" id="tab-btn-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Semantic Search
+        </button>
+        <button class="nav-btn" data-tab="change" id="tab-btn-change">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+          Change Detection
+        </button>
+        <button class="nav-btn" data-tab="results" id="tab-btn-results">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          Research Results
+        </button>
+        <button class="nav-btn" data-tab="methodology" id="tab-btn-methodology">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Methodology & Limitations
+        </button>
+      </nav>
+
+      <div class="system-status">
+        <span class="status-indicator" id="status-indicator"></span>
+        <span class="status-label" id="status-label">Checking Backend...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="alert-banner" class="alert-banner hidden" role="alert">
+    <div class="alert-content">
+      <span id="alert-message"></span>
+      <button id="alert-close" class="alert-close" aria-label="Close Alert">&times;</button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- SECTION 1: SEMANTIC SEARCH -->
+    <section id="panel-search" class="content-panel active">
+      <div class="panel-header">
+        <h2>Cross-Modal Semantic Satellite Image Retrieval</h2>
+        <p class="panel-desc">Query 1,093 RSICD aerial/satellite test scenes using natural-language descriptions. Benchmark zero-shot vision-language embeddings against lexical baselines.</p>
+      </div>
+
+      <div class="search-controls-card">
+        <form id="search-form" class="search-form">
+          <div class="query-input-group">
+            <label for="search-query-input">Natural-Language Query</label>
+            <div class="input-with-button">
+              <input type="text" id="search-query-input" placeholder="e.g. airport with multiple commercial airplanes parked near terminals" value="airport with multiple commercial airplanes" required>
+              <button type="submit" id="search-submit-btn" class="primary-btn">
+                <span class="btn-text">Search Gallery</span>
+                <span class="btn-spinner hidden"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="search-options-row">
+            <div class="option-field">
+              <label for="search-method-select">Retrieval Model</label>
+              <select id="search-method-select">
+                <option value="clip" selected>M4 A2 — CLIP ViT-B/32 (Zero-Shot Cross-Modal)</option>
+                <option value="prompt_ensemble">M4 A3 — CLIP + Domain Prompt Ensemble (5 RS Templates)</option>
+                <option value="bm25">B/M4 A1 — BM25 (Leave-One-Caption-Out Lexical Baseline)</option>
+              </select>
+            </div>
+
+            <div class="option-field">
+              <label for="search-topk-select">Candidates (Top-K)</label>
+              <select id="search-topk-select">
+                <option value="4">4 matches</option>
+                <option value="8" selected>8 matches</option>
+                <option value="12">12 matches</option>
+                <option value="16">16 matches</option>
+                <option value="24">24 matches</option>
+              </select>
+            </div>
+
+            <div class="quick-queries">
+              <label>Sample Queries:</label>
+              <div class="query-chips">
+                <button type="button" class="chip-btn" data-query="airport with multiple commercial airplanes">Airport</button>
+                <button type="button" class="chip-btn" data-query="dense commercial harbor with cargo ships">Harbor</button>
+                <button type="button" class="chip-btn" data-query="dense residential area with many houses">Residential</button>
+                <button type="button" class="chip-btn" data-query="storage tanks in industrial area">Storage Tanks</button>
+                <button type="button" class="chip-btn" data-query="baseball field surrounded by trees">Baseball Field</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="search-meta-bar" id="search-meta-bar" style="display: none;">
+        <div class="meta-item"><span class="meta-label">Method:</span> <strong id="meta-method-name">CLIP ViT-B/32</strong></div>
+        <div class="meta-item"><span class="meta-label">Latency:</span> <strong id="meta-latency-val">0 ms</strong> (CPU)</div>
+        <div class="meta-item"><span class="meta-label">Found:</span> <strong id="meta-results-count">0</strong> candidates</div>
+        <div class="meta-item"><span class="meta-label">Index:</span> <strong>FAISS IndexFlatIP (512D)</strong></div>
+      </div>
+
+      <!-- Results Grid -->
+      <div id="search-results-container" class="results-grid-container">
+        <div class="empty-state" id="search-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <h3>Ready for Semantic Search</h3>
+          <p>Enter a query above or click one of the sample queries to search the RSICD gallery.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: CHANGE DETECTION -->
+    <section id="panel-change" class="content-panel">
+      <div class="panel-header">
+        <h2>Bi-Temporal Satellite Image Change Detection</h2>
+        <p class="panel-desc">Evaluate land-cover and building surface changes between temporal pairs ($T_1 \rightarrow T_2$). Compare classical radiometric differences with Siamese CNNs, dense attention networks, and transformers.</p>
+      </div>
+
+      <div class="change-controls-card">
+        <form id="change-form" class="change-form">
+          <div class="change-options-grid">
+            <div class="option-field">
+              <label for="change-pair-select">LEVIR-CD Test Scene Pair</label>
+              <select id="change-pair-select">
+                <option value="test_1" selected>test_1 (Ground Truth Available)</option>
+                <option value="test_2">test_2</option>
+                <option value="test_3">test_3</option>
+                <option value="test_4">test_4</option>
+                <option value="test_5">test_5</option>
+                <option value="test_10">test_10</option>
+                <option value="test_20">test_20</option>
+                <option value="test_30">test_30</option>
+                <option value="test_40">test_40</option>
+                <option value="test_50">test_50</option>
+              </select>
+            </div>
+
+            <div class="option-field">
+              <label for="change-model-select">Detection Algorithm / Model</label>
+              <select id="change-model-select">
+                <option value="M9_BIT_CD" selected>M9 BIT-CD (Bitemporal Transformer, 552k params)</option>
+                <option value="M10_QAT_CD">M10 QAT-CD (Quality-Aware Gated Detection)</option>
+                <option value="M7_FC_Siam_diff">M7 FC-Siam-diff (Siamese U-Net, 1.47M params)</option>
+                <option value="M8_SNUNet">M8 SNUNet-CD (Dense Siamese + ECAM, 563k params)</option>
+                <option value="B1_Pixel_Diff">B1 Pixel Difference (L1 Radiometric Baseline)</option>
+                <option value="B2_SSIM">B2 SSIM Dissimilarity (Structural Baseline)</option>
+                <option value="B3_CVA">B3 Change Vector Analysis (Spectral Baseline)</option>
+              </select>
+            </div>
+
+            <div class="option-field" id="qat-options-group" style="display: none;">
+              <label for="qat-gamma-select">QAT-CD Attenuation Strength (&gamma;)</label>
+              <select id="qat-gamma-select">
+                <option value="0.0" selected>&gamma; = 0.0 (Validation Optimal, Baseline F1)</option>
+                <option value="0.30">&gamma; = 0.30 (Exploratory Active Gating, -29.2% FP)</option>
+              </select>
+            </div>
+
+            <div class="option-field">
+              <label for="change-threshold-override">Decision Threshold &tau;* Override</label>
+              <input type="number" id="change-threshold-override" step="0.01" min="0.0" max="1.0" placeholder="Default (Frozen &tau;*)">
+            </div>
+          </div>
+
+          <div class="change-action-row">
+            <button type="submit" id="change-submit-btn" class="primary-btn">
+              <span class="btn-text">Execute Change Detection</span>
+              <span class="btn-spinner hidden"></span>
+            </button>
+            <div class="toggle-control">
+              <label class="switch">
+                <input type="checkbox" id="show-error-overlay-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+              <span class="switch-label">Show Diagnostic Error Overlay (TP/FP/FN)</span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Change Visualizer Stage -->
+      <div id="change-results-stage" class="change-results-stage" style="display: none;">
+        <div class="viewer-meta-ribbon">
+          <div class="ribbon-item"><span class="ribbon-label">Model:</span> <strong id="ribbon-model">M9 BIT-CD</strong></div>
+          <div class="ribbon-item"><span class="ribbon-label">Threshold:</span> <strong id="ribbon-threshold">&tau;* = 0.4500</strong></div>
+          <div class="ribbon-item"><span class="ribbon-label">Latency:</span> <strong id="ribbon-latency">0 ms</strong> (CPU)</div>
+          <div class="ribbon-item"><span class="ribbon-label">Resolution:</span> <strong>1024 &times; 1024</strong> (16 &times; 256 patches)</div>
+        </div>
+
+        <div class="quad-viewer-grid">
+          <div class="quad-card">
+            <div class="quad-header">
+              <h3>Image T1 (Pre-Change)</h3>
+              <span class="badge">Optical RGB</span>
+            </div>
+            <div class="quad-body">
+              <img id="view-t1" alt="Image T1" src="" loading="lazy">
+            </div>
+          </div>
+
+          <div class="quad-card">
+            <div class="quad-header">
+              <h3>Image T2 (Post-Change)</h3>
+              <span class="badge">Optical RGB</span>
+            </div>
+            <div class="quad-body">
+              <img id="view-t2" alt="Image T2" src="" loading="lazy">
+            </div>
+          </div>
+
+          <div class="quad-card">
+            <div class="quad-header">
+              <h3>Continuous Difference Map</h3>
+              <span class="badge badge-accent">Inferno Heatmap [0, 1]</span>
+            </div>
+            <div class="quad-body">
+              <img id="view-heatmap" alt="Difference Heatmap" src="" loading="lazy">
+            </div>
+          </div>
+
+          <div class="quad-card">
+            <div class="quad-header">
+              <h3>Predicted Change Mask</h3>
+              <span class="badge badge-success">Binary (&ge; &tau;*)</span>
+            </div>
+            <div class="quad-body">
+              <img id="view-mask" alt="Predicted Mask" src="" loading="lazy">
+            </div>
+          </div>
+        </div>
+
+        <!-- Diagnostic Overlay (if ground truth available) -->
+        <div id="diagnostic-overlay-section" class="diagnostic-overlay-section">
+          <div class="quad-card full-width">
+            <div class="quad-header">
+              <h3>Ground-Truth Audit & Confusion Error Overlay</h3>
+              <div class="legend-pills">
+                <span class="pill pill-tp">True Positive (Green)</span>
+                <span class="pill pill-fp">False Positive (Red)</span>
+                <span class="pill pill-fn">False Negative (Blue)</span>
+                <span class="pill pill-tn">True Negative (Dark)</span>
+              </div>
+            </div>
+            <div class="overlay-viewer-wrapper">
+              <img id="view-overlay" alt="Error Overlay" src="" loading="lazy">
+            </div>
+          </div>
+
+          <!-- Scene Metrics -->
+          <div class="metrics-cards-row" id="scene-metrics-row">
+            <div class="metric-card">
+              <span class="metric-name">Precision</span>
+              <strong class="metric-value" id="val-precision">0.00%</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-name">Recall</span>
+              <strong class="metric-value" id="val-recall">0.00%</strong>
+            </div>
+            <div class="metric-card highlight">
+              <span class="metric-name">F1 Score</span>
+              <strong class="metric-value" id="val-f1">0.0000</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-name">IoU (Jaccard)</span>
+              <strong class="metric-value" id="val-iou">0.00%</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-name">Accuracy</span>
+              <strong class="metric-value" id="val-accuracy">0.00%</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-name">False Positives (Pixels)</span>
+              <strong class="metric-value" id="val-fp">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RESEARCH RESULTS -->
+    <section id="panel-results" class="content-panel">
+      <div class="panel-header">
+        <h2>Milestone M11 Official Benchmark Results & Scientific Validation</h2>
+        <p class="panel-desc">All metrics below were computed from frozen confusion counts across all 128 LEVIR-CD test scenes ($134,217,728$ evaluated pixels) under standardized CPU conditions with warm-up.</p>
+      </div>
+
+      <!-- Main Benchmark Table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>Comparative Benchmark Performance (LEVIR-CD Held-Out Test Set)</h3>
+          <span class="badge badge-accent">134,217,728 Evaluated Pixels</span>
+        </div>
+        <div class="table-responsive">
+          <table class="benchmark-table" id="benchmark-summary-table">
+            <thead>
+              <tr>
+                <th>Detector</th>
+                <th>Type</th>
+                <th>Threshold &tau;*</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
+                <th>IoU</th>
+                <th>Accuracy</th>
+                <th>False Positives</th>
+                <th>CPU Latency</th>
+                <th>Peak RSS</th>
+              </tr>
+            </thead>
+            <tbody id="benchmark-table-body">
+              <tr><td colspan="11" class="loading-cell">Loading verified M11 benchmark records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bootstrap CI and Wilcoxon Tests Grid -->
+      <div class="stats-cards-grid">
+        <div class="table-card">
+          <div class="table-card-header">
+            <h3>Scene-Level Bootstrap 95% Confidence Intervals (B = 1,000)</h3>
+            <span class="badge">N = 128 Scenes</span>
+          </div>
+          <div class="table-responsive">
+            <table class="benchmark-table small" id="bootstrap-ci-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Precision (95% CI)</th>
+                  <th>Recall (95% CI)</th>
+                  <th>F1 Score (95% CI)</th>
+                  <th>IoU (95% CI)</th>
+                </tr>
+              </thead>
+              <tbody id="bootstrap-table-body">
+                <tr><td colspan="5" class="loading-cell">Loading statistical resamples...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card-header">
+            <h3>Paired Wilcoxon Signed-Rank Hypothesis Tests</h3>
+            <span class="badge">&alpha; = 0.05 Level</span>
+          </div>
+          <div class="table-responsive">
+            <table class="benchmark-table small" id="wilcoxon-tests-table">
+              <thead>
+                <tr>
+                  <th>Comparison</th>
+                  <th>Mean &Delta;F1</th>
+                  <th>Statistic W</th>
+                  <th>p-value (F1)</th>
+                  <th>Significant?</th>
+                </tr>
+              </thead>
+              <tbody id="wilcoxon-table-body">
+                <tr><td colspan="5" class="loading-cell">Loading paired tests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- QAT-CD Gating Ablations Table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>M10 Quality-Aware Attenuation & False-Alarm Ablations</h3>
+          <span class="badge badge-accent">Operational Trade-Off Analysis</span>
+        </div>
+        <div class="table-responsive">
+          <table class="benchmark-table small" id="ablation-table">
+            <thead>
+              <tr>
+                <th>Ablation Condition</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
+                <th>FP Pixels</th>
+                <th>FP Reduction (%)</th>
+                <th>Precision &Delta;</th>
+                <th>Recall &Delta;</th>
+                <th>Exchange Ratio (&Delta;FP / &Delta;TP)</th>
+              </tr>
+            </thead>
+            <tbody id="ablation-table-body">
+              <tr><td colspan="9" class="loading-cell">Loading ablation outcomes...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Figures Gallery -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>Precomputed Publication Visualizations (Milestone M11)</h3>
+          <span class="badge">Generated from Raw Artifacts</span>
+        </div>
+        <div class="figures-gallery-grid" id="figures-gallery-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: METHODOLOGY & LIMITATIONS -->
+    <section id="panel-methodology" class="content-panel">
+      <div class="panel-header">
+        <h2>Methodology, Hardware Constraints & Scientific Limitations</h2>
+        <p class="panel-desc">Transparent documentation of experimental protocols, architectural choices, and honest disclosure of empirical constraints.</p>
+      </div>
+
+      <div class="methodology-grid">
+        <div class="info-card">
+          <h3>1. Semantic Retrieval Formulation (M4)</h3>
+          <p>Cross-modal text-to-image retrieval maps natural language queries $q$ and aerial imagery $x$ into a shared 512-dimensional embedding space using OpenAI CLIP ViT-B/32. Vectors are $L_2$-normalized such that inner-product similarity corresponds strictly to cosine similarity.</p>
+          <ul>
+            <li><strong>Dataset:</strong> RSICD (Remote Sensing Image Captioning Dataset)</li>
+            <li><strong>Test Gallery:</strong> 1,093 held-out test scenes</li>
+            <li><strong>Indexing:</strong> FAISS-CPU <code>IndexFlatIP</code> (single-process CPU execution)</li>
+            <li><strong>Domain Ensembling:</strong> 5 remote-sensing prompt templates averaged prior to normalization</li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h3>2. Bi-Temporal Change Detection Formulation (M5&ndash;M10)</h3>
+          <p>Given co-registered optical scenes $T_1, T_2 \in \mathbb{R}^{H \times W \times 3}$, models compute continuous change likelihoods $D(x, y) \in [0, 1]$, binarized at frozen validation threshold $\tau^*$:</p>
+          <ul>
+            <li><strong>B1 Pixel Difference:</strong> Absolute grayscale difference ($L_1$), $\tau^* = 0.4100$</li>
+            <li><strong>B2 SSIM:</strong> Localized structural dissimilarity ($1 - \text{SSIM}$), $\tau^* = 0.9000$</li>
+            <li><strong>B3 CVA:</strong> Radiometric change vector magnitude in spectral space, $\tau^* = 0.4050$</li>
+            <li><strong>M7 FC-Siam-diff:</strong> Fully convolutional Siamese U-Net with feature differencing, $\tau^* = 0.5500$</li>
+            <li><strong>M8 SNUNet-CD:</strong> Dense skip Siamese network with Ensemble Channel Attention, $\tau^* = 0.5000$</li>
+            <li><strong>M9 BIT-CD:</strong> ResNet18 encoder with bitemporal transformer token exchange, $\tau^* = 0.4500$</li>
+            <li><strong>M10 QAT-CD:</strong> Multi-signal quality gating attenuating registration and sharpness artifacts, $\tau^* = 0.4500$</li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h3>3. Hardware Constraints & Fair Profiling</h3>
+          <p>The entire research framework is constrained to commodity CPU hardware without cloud GPUs, CUDA, or distributed clusters:</p>
+          <ul>
+            <li><strong>Platform:</strong> Apple Silicon arm64 (8-core CPU), PyTorch 2.5.1 CPU</li>
+            <li><strong>Thread Control:</strong> Strictly fixed at <code>torch.set_num_threads(4)</code></li>
+            <li><strong>Memory Ceiling:</strong> Peak RAM constrained under 8 GB (verified peak RSS: 877 MB)</li>
+            <li><strong>Profiling Policy:</strong> 1 warm-up scene prior to timed runs; latency reported across mean, P50, and P95</li>
+          </ul>
+        </div>
+
+        <div class="info-card warning-border">
+          <h3>4. Scientific Limitations & Threats to Validity</h3>
+          <p><strong>A. Closed-Benchmark Test Set Reuse:</strong> As recorded in the project devlog and decision logs, the official 128-scene LEVIR-CD test split has been evaluated repeatedly across milestones M5&ndash;M10. While decision thresholds were strictly calibrated on the 64 validation scenes, repeated inspection means test results represent a closed retrospective benchmark rather than an untouched prospective trial.</p>
+          <p><strong>B. QAT-CD Active Gating is Exploratory:</strong> Under validation calibration optimizing for unweighted F1, the optimal attenuation strength was $\gamma^* = 0.0$ (identical to BIT-CD). The active gating setting ($\gamma = 0.30$) suppresses 29.19% of false alarms and raises precision by +5.42 pp, but slightly reduces unweighted F1. It must not be claimed as an unconditional F1 improvement.</p>
+          <p><strong>C. SNUNet-CD False Alarms:</strong> Dense multi-scale feature concatenation without spatial boundary priors results in severe false-alarm runaway (over 53 million false-positive pixels), confirming that high recall alone is insufficient in aerial surveillance.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Image Preview Modal -->
+  <div id="image-modal" class="image-modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-window">
+      <button id="modal-close-btn" class="modal-close-btn" aria-label="Close Preview">&times;</button>
+      <div class="modal-image-wrapper">
+        <img id="modal-image" src="" alt="Enlarged Preview">
+      </div>
+      <div class="modal-caption" id="modal-caption"></div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>AI-Driven Satellite Image Semantic Search & Bi-Temporal Change Detection &bull; Milestone 12 Web Interface Prototype</p>
+      <p class="footer-sub">Final-Year B.Tech CSE (AI/ML) Research Study &bull; CPU-Only Reproducible Architecture</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

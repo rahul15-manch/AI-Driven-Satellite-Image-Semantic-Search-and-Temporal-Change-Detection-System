@@ -129,7 +129,7 @@
       </div>
 
       <!-- Results Grid -->
-      <div id="search-results-container" class="results-grid-container">
+      <div id="search-results-container" class="search-results-container">
         <div class="empty-state" id="search-empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           <h3>Ready for Semantic Search</h3>
@@ -147,7 +147,7 @@
 
       <div class="change-controls-card">
         <form id="change-form" class="change-form">
-          <div class="change-options-grid">
+          <div class="change-options-grid change-detection-config">
             <div class="option-field">
               <label for="change-pair-select">LEVIR-CD Test Scene Pair</label>
               <select id="change-pair-select">
@@ -191,7 +191,7 @@
             </div>
           </div>
 
-          <div class="change-action-row">
+          <div class="change-action-row change-detection-actions">
             <button type="submit" id="change-submit-btn" class="primary-btn">
               <span class="btn-text">Execute Change Detection</span>
               <span class="btn-spinner hidden"></span>
@@ -216,8 +216,8 @@
           <div class="ribbon-item"><span class="ribbon-label">Resolution:</span> <strong>1024 &times; 1024</strong> (16 &times; 256 patches)</div>
         </div>
 
-        <div class="quad-viewer-grid">
-          <div class="quad-card">
+        <div class="quad-viewer-grid change-detection-results-grid">
+          <div class="quad-card visualization-card">
             <div class="quad-header">
               <h3>Image T1 (Pre-Change)</h3>
               <span class="badge">Optical RGB</span>
@@ -227,7 +227,7 @@
             </div>
           </div>
 
-          <div class="quad-card">
+          <div class="quad-card visualization-card">
             <div class="quad-header">
               <h3>Image T2 (Post-Change)</h3>
               <span class="badge">Optical RGB</span>
@@ -237,7 +237,7 @@
             </div>
           </div>
 
-          <div class="quad-card">
+          <div class="quad-card visualization-card">
             <div class="quad-header">
               <h3>Continuous Difference Map</h3>
               <span class="badge badge-accent">Inferno Heatmap [0, 1]</span>
@@ -247,7 +247,7 @@
             </div>
           </div>
 
-          <div class="quad-card">
+          <div class="quad-card visualization-card">
             <div class="quad-header">
               <h3>Predicted Change Mask</h3>
               <span class="badge badge-success">Binary (&ge; &tau;*)</span>
@@ -303,14 +303,22 @@
             </div>
           </div>
         </div>
+
+        <!-- AI Explainability Action Bar -->
+        <div class="change-explain-action-bar" id="change-explain-action-bar">
+          <button type="button" class="btn-explain-large" id="btn-explain-change">
+            <span class="explain-icon">💡</span> Explain This Prediction (Qwen 27B)
+          </button>
+          <div class="change-explanation-slot" id="change-explanation-slot"></div>
+        </div>
       </div>
     </section>
 
     <!-- SECTION 3: RESEARCH RESULTS -->
-    <section id="panel-results" class="content-panel">
+    <section id="panel-results" class="content-panel research-results-container">
       <div class="panel-header">
-        <h2>Milestone M11 Official Benchmark Results & Scientific Validation</h2>
-        <p class="panel-desc">All metrics below were computed from frozen confusion counts across all 128 LEVIR-CD test scenes ($134,217,728$ evaluated pixels) under standardized CPU conditions with warm-up.</p>
+        <h2>Milestone M11 & M13 Official Benchmark Results & Scientific Validation</h2>
+        <p class="panel-desc">All metrics below were computed from frozen confusion counts across all 128 LEVIR-CD test scenes ($134,217,728$ evaluated pixels) and 1,093 RSICD test queries under standardized CPU conditions with warm-up.</p>
       </div>
 
       <!-- Main Benchmark Table -->
@@ -420,13 +428,22 @@
         </div>
       </div>
 
-      <!-- Figures Gallery -->
-      <div class="table-card">
+      <!-- Publication Visualizations Section -->
+      <div class="table-card publication-figures-card">
         <div class="table-card-header">
-          <h3>Precomputed Publication Visualizations (Milestone M11)</h3>
-          <span class="badge">Generated from Raw Artifacts</span>
+          <div class="table-card-title-group">
+            <h3>Publication Visualizations & Research Charts</h3>
+            <span class="table-card-subtitle">Comprehensive Experimental Evaluation across Milestones (M5–M13)</span>
+          </div>
+          <div class="figures-filter-group" id="figures-filter-group">
+            <button type="button" class="fig-filter-btn active" data-filter="all">All Charts</button>
+            <button type="button" class="fig-filter-btn" data-filter="m13">M13 End-to-End</button>
+            <button type="button" class="fig-filter-btn" data-filter="m11">M11 Benchmark</button>
+            <button type="button" class="fig-filter-btn" data-filter="m10">M10 QAT-CD</button>
+            <button type="button" class="fig-filter-btn" data-filter="m6-m5">M5/M6 Baselines</button>
+          </div>
         </div>
-        <div class="figures-gallery-grid" id="figures-gallery-grid">
+        <div class="figures-gallery-grid research-results-grid" id="figures-gallery-grid">
           <!-- Populated by JS -->
         </div>
       </div>

@@ -135,3 +135,93 @@ def test_javascript_modules_export_syntax():
         open_braces = content.count("{")
         close_braces = content.count("}")
         assert open_braces == close_braces, f"Mismatched braces in {jf}: {open_braces} != {close_braces}"
+
+
+def test_research_results_layout_and_responsive_css():
+    """Verifies Research Results tab layout classes, responsive grid, and non-clipping image CSS."""
+    html_content = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+    css_content = (FRONTEND_DIR / "css" / "styles.css").read_text(encoding="utf-8")
+
+    # HTML structure requirements
+    assert "research-results-container" in html_content
+    assert "research-results-grid" in html_content
+    assert "figures-filter-group" in html_content
+    assert 'data-filter="all"' in html_content
+    assert 'data-filter="m13"' in html_content
+    assert 'data-filter="m11"' in html_content
+
+    # CSS responsive grid and non-clipping rules
+    assert ".research-results-container" in css_content
+    assert ".research-results-grid" in css_content
+    assert ".research-chart-card" in css_content
+    assert "object-fit: contain" in css_content
+    assert "repeat(2, minmax(0, 1fr))" in css_content
+    assert "max-width: 1440px" in css_content
+
+
+def test_search_results_and_explanation_layout_css():
+    """Verifies layout width, card structure, and responsive 3-column explanation grid CSS."""
+    html_content = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+    css_content = (FRONTEND_DIR / "css" / "styles.css").read_text(encoding="utf-8")
+    js_content = (FRONTEND_DIR / "js" / "search.js").read_text(encoding="utf-8")
+
+    # HTML structure check
+    assert 'id="search-results-container"' in html_content
+    assert 'class="search-results-container"' in html_content
+
+    # CSS classes and layout rules
+    assert ".search-results-container" in css_content
+    assert ".search-results-list" in css_content
+    assert ".search-result-card" in css_content
+    assert ".search-result-main" in css_content
+    assert ".search-result-thumb-box" in css_content
+    assert ".explanation-slot" in css_content
+    assert ".explanation-card" in css_content
+    assert ".explanation-summary-box" in css_content
+    assert ".explanation-details-grid" in css_content
+
+    # Grid rules & media query specifications
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in css_content
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css_content
+    assert "grid-template-columns: minmax(0, 1fr)" in css_content
+    assert "@media (max-width: 900px)" in css_content
+    assert "@media (max-width: 600px)" in css_content
+
+    # JavaScript emits required classes
+    assert "search-results-list" in js_content
+    assert "search-result-card" in js_content
+    assert "search-result-main" in js_content
+    assert "explanation-slot" in js_content
+
+
+def test_change_detection_layout_and_responsive_css():
+    """Verifies Change Detection form alignment, 4-column quad viewer grid, and responsive styling."""
+    html_content = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+    css_content = (FRONTEND_DIR / "css" / "styles.css").read_text(encoding="utf-8")
+
+    # HTML structural classes
+    assert "change-detection-config" in html_content
+    assert "change-detection-actions" in html_content
+    assert "change-detection-results-grid" in html_content
+    assert "visualization-card" in html_content
+
+    # CSS layout rules
+    assert ".change-detection-config" in css_content
+    assert ".change-detection-actions" in css_content
+    assert ".change-detection-results-grid" in css_content
+    assert ".visualization-card" in css_content
+    assert "repeat(4, minmax(0, 1fr))" in css_content
+    assert "min-height: 46px" in css_content
+    assert "aspect-ratio: 1 / 1" in css_content
+    assert "object-fit: contain" in css_content
+
+
+def test_scene_selector_labels_regression():
+    """Verifies that dynamic scene pair labeling logic never produces undefined or null labels."""
+    js_content = (FRONTEND_DIR / "js" / "change_detection.js").read_text(encoding="utf-8")
+    assert 'rawIdentifier !== "undefined"' in js_content
+    assert 'rawIdentifier !== "null"' in js_content
+    assert "Scene identifier unavailable" in js_content
+    assert "Ground Truth Available" in js_content
+
+

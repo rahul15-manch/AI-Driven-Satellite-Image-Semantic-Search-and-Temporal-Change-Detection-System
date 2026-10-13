@@ -134,10 +134,18 @@ class ChangeDetectionResponse(BaseModel):
 class PairInfo(BaseModel):
     """Metadata record for an available test scene pair."""
     pair_id: str
+    name: Optional[str] = None
     dataset: str
     image_t1_url: str
     image_t2_url: str
     has_ground_truth: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_name_default(cls, values: Any) -> Any:
+        if isinstance(values, dict) and not values.get("name"):
+            values["name"] = values.get("pair_id")
+        return values
 
 
 class BenchmarkModelSummary(BaseModel):
@@ -177,3 +185,54 @@ class BenchmarkResponse(BaseModel):
     cpu_performance_benchmark: Dict[str, Any]
     threshold_provenance_audit: Dict[str, Any]
     figures: List[Union[str, Dict[str, Any]]]
+
+
+# ==============================================================================
+# LLM EXPLAINABILITY SCHEMAS (Groq-hosted Qwen 27B)
+# ==============================================================================
+
+class LLMStatusResponse(BaseModel):
+    """Status contract for Groq-hosted LLM explainability."""
+    configured: bool
+    provider: str = "Groq"
+    model: str
+    status: str  # "ready", "unconfigured", "error"
+    connectivity: str  # "verified", "unverified", "failed"
+    message: str
+
+
+class ExplainChangeDetectionRequest(BaseModel):
+    """Request payload to explain a completed bi-temporal change detection run."""
+    pair_id: Optional[str] = Field(default="test_1", description="LEVIR-CD pair ID")
+    model_id: str = Field(..., description="Detector model identifier")
+    threshold: Optional[float] = Field(default=None, description="Decision threshold override if any")
+    gamma: Optional[float] = Field(default=0.0, description="QAT-CD quality attenuation parameter")
+    changed_pixels: Optional[int] = Field(default=None, description="Optional count of predicted changed pixels")
+    change_ratio_pct: Optional[float] = Field(default=None, description="Optional percentage of changed area")
+    metrics: Optional[Dict[str, Any]] = Field(default=None, description="Optional verified ground truth metrics")
+
+
+class ExplainSearchRequest(BaseModel):
+    """Request payload to explain an RSICD semantic search candidate."""
+    query: str = Field(..., min_length=1, description="Original natural language query")
+    method: str = Field(..., description="Retrieval method (clip, prompt_ensemble, bm25)")
+    image_id: str = Field(..., description="Image identifier")
+    filename: Optional[str] = Field(default=None, description="Image filename")
+    rank: int = Field(..., ge=1, description="Ranking position (1-based)")
+    score: float = Field(..., description="Similarity or lexical relevance score")
+    score_type: Optional[str] = Field(default=None, description="Score type label")
+    category: Optional[str] = Field(default=None, description="Visual scene category")
+    captions: Optional[List[str]] = Field(default=None, description="Verified RSICD reference captions")
+
+
+class ExplanationResponse(BaseModel):
+    """Evidence-grounded model explanation output contract."""
+    explanation_model: str = Field(..., description="Configured Qwen 27B model identifier on Groq")
+    provider: str = Field(default="Groq", description="Hosting API provider")
+    source_model: str = Field(..., description="Original research model that generated the prediction")
+    task: str = Field(..., description="Task type: change_detection or semantic_search")
+    prediction_summary: str = Field(..., description="Clear evidence-grounded interpretation of the prediction")
+    supporting_evidence: List[str] = Field(default_factory=list, description="Verified facts and metrics from the results")
+    limitations: List[str] = Field(default_factory=list, description="Documented architectural and evaluation constraints")
+    unknowns: List[str] = Field(default_factory=list, description="Information missing or outside the system's purview")
+

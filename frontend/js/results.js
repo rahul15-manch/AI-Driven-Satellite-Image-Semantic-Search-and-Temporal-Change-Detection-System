@@ -143,33 +143,139 @@ export async function initResults() {
     ablationTableBody.innerHTML = rowsHtml;
   }
 
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function renderFiguresGallery(figures) {
+    if (!figuresGalleryGrid) return;
+
     if (!figures.length) {
-      figuresGalleryGrid.innerHTML = `<p class="empty-state-text">No publication figures found.</p>`;
+      figuresGalleryGrid.innerHTML = `
+        <div class="chart-unavailable-state" style="grid-column: 1 / -1;">
+          <p>No publication research figures found.</p>
+          <code>Verify figures exist in experiments/figures/</code>
+        </div>
+      `;
       return;
+    }
+
+    const figuresFilterGroup = document.getElementById("figures-filter-group");
+
+    // Update filter buttons count
+    if (figuresFilterGroup) {
+      const counts = {
+        all: figures.length,
+        m13: figures.filter(f => f.category_key === "m13").length,
+        m11: figures.filter(f => f.category_key === "m11").length,
+        m10: figures.filter(f => f.category_key === "m10").length,
+        "m6-m5": figures.filter(f => f.category_key === "m6-m5" || f.category_key === "m6" || f.category_key === "m5").length,
+      };
+
+      figuresFilterGroup.querySelectorAll(".fig-filter-btn").forEach(btn => {
+        const filterKey = btn.getAttribute("data-filter");
+        if (filterKey && counts[filterKey] !== undefined) {
+          const originalText = btn.textContent.split(" (")[0];
+          btn.textContent = `${originalText} (${counts[filterKey]})`;
+        }
+      });
     }
 
     let gridHtml = "";
     figures.forEach(fig => {
+      const catKey = fig.category_key || "all";
+      const catLabel = fig.category || "Publication Figure";
+      const title = fig.title || fig.name;
+      const desc = fig.description || "";
+
       gridHtml += `
-        <div class="figure-card">
-          <div class="figure-thumb-wrapper" data-src="${fig.url}" data-title="${fig.title}">
-            <img src="${fig.url}" alt="${fig.title}" loading="lazy">
+        <div class="research-chart-card figure-thumb-card figure-card" data-category="${escapeHtml(catKey)}">
+          <div class="research-chart-card-header">
+            <span class="research-chart-tag" data-cat="${escapeHtml(catKey)}">${escapeHtml(catLabel)}</span>
+            <h4 class="research-chart-title">${escapeHtml(title)}</h4>
           </div>
-          <div class="figure-caption">
-            <h4>${fig.title}</h4>
+          <div class="research-chart-media figure-thumb-box figure-thumb-wrapper" 
+               data-src="${escapeHtml(fig.url)}" 
+               data-title="${escapeHtml(title)}"
+               role="button" 
+               tabindex="0" 
+               aria-label="Enlarge chart: ${escapeHtml(title)}"
+               title="Click to view full-resolution visualization">
+            <img src="${escapeHtml(fig.url)}" 
+                 alt="${escapeHtml(title)}" 
+                 loading="lazy" 
+                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'chart-unavailable-state\\'><p>Figure unavailable</p><code>${escapeHtml(fig.url)}</code></div>';" />
+            <div class="research-chart-overlay">
+              <span>🔍 Click to expand</span>
+            </div>
           </div>
+          ${desc ? `
+            <div class="research-chart-caption">
+              <p>${escapeHtml(desc)}</p>
+            </div>
+          ` : ""}
         </div>
       `;
     });
+
     figuresGalleryGrid.innerHTML = gridHtml;
 
-    figuresGalleryGrid.querySelectorAll(".figure-thumb-wrapper").forEach(wrap => {
-      wrap.addEventListener("click", () => {
+    // Attach click and keyboard modal handlers
+    const attachMediaHandler = (wrap) => {
+      const triggerModal = () => {
         const src = wrap.getAttribute("data-src");
         const title = wrap.getAttribute("data-title");
-        window.app?.openModal(src, title);
+        if (src) {
+          window.app?.openModal(src, title);
+        }
+      };
+
+      wrap.addEventListener("click", triggerModal);
+      wrap.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          triggerModal();
+        }
       });
-    });
+    };
+
+    figuresGalleryGrid.querySelectorAll(".research-chart-media").forEach(attachMediaHandler);
+
+    // Setup Category Filtering
+    if (figuresFilterGroup) {
+      const filterButtons = figuresFilterGroup.querySelectorAll(".fig-filter-btn");
+      filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const filter = btn.getAttribute("data-filter") || "all";
+          filterButtons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          const cards = figuresGalleryGrid.querySelectorAll(".research-chart-card");
+          cards.forEach(card => {
+            const cardCat = card.getAttribute("data-category");
+            if (filter === "all") {
+              card.classList.remove("hidden");
+            } else if (filter === "m6-m5") {
+              if (cardCat === "m6-m5" || cardCat === "m6" || cardCat === "m5") {
+                card.classList.remove("hidden");
+              } else {
+                card.classList.add("hidden");
+              }
+            } else if (cardCat === filter) {
+              card.classList.remove("hidden");
+            } else {
+              card.classList.add("hidden");
+            }
+          });
+        });
+      });
+    }
   }
 }
+

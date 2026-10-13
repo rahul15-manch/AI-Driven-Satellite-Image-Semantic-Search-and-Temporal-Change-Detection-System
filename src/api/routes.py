@@ -21,11 +21,16 @@ from src.api.schemas import (
     ChangeDetectionResponse,
     PairInfo,
     BenchmarkResponse,
+    LLMStatusResponse,
+    ExplainChangeDetectionRequest,
+    ExplainSearchRequest,
+    ExplanationResponse,
 )
 from src.api.service import (
     retrieval_service,
     change_detection_service,
     benchmark_service,
+    llm_explanation_service,
     ROOT,
 )
 
@@ -178,23 +183,120 @@ def serve_dataset_image(dataset: str, path: str):
 
 @router.get("/figures/{figure_name}")
 def serve_research_figure(figure_name: str):
-    """Serves generated M11 or M10 research figures."""
+    """Serves generated M13, M11, M10, M6, or M5 research publication figures."""
     clean_name = Path(figure_name).name
-    if not clean_name.endswith((".png", ".jpg")):
+    suffix = Path(figure_name).suffix.lower()
+    if suffix not in (".png", ".jpg", ".jpeg", ".svg"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid figure filename format.",
         )
 
-    fig_m11 = (ROOT / "experiments" / "figures" / "m11" / clean_name).resolve()
-    fig_m10 = (ROOT / "experiments" / "figures" / "m10" / clean_name).resolve()
+    search_dirs = [
+        ROOT / "experiments" / "figures" / "m13",
+        ROOT / "experiments" / "figures" / "m11",
+        ROOT / "experiments" / "figures" / "m10",
+        ROOT / "experiments" / "figures" / "m6",
+        ROOT / "experiments" / "figures" / "m5",
+    ]
+    figures_base = (ROOT / "experiments" / "figures").resolve()
 
-    if fig_m11.exists() and fig_m11.is_file():
-        return FileResponse(fig_m11, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
-    elif fig_m10.exists() and fig_m10.is_file():
-        return FileResponse(fig_m10, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+    for fig_dir in search_dirs:
+        target = (fig_dir / clean_name).resolve()
+        # Security check: ensure path is strictly within experiments/figures
+        if target.is_relative_to(figures_base) and target.exists() and target.is_file():
+            media_type = "image/svg+xml" if suffix == ".svg" else ("image/jpeg" if suffix in (".jpg", ".jpeg") else "image/png")
+            return FileResponse(target, media_type=media_type, headers={"Cache-Control": "public, max-age=3600"})
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Research figure '{clean_name}' not found.",
     )
+
+
+# ==============================================================================
+# LLM EXPLAINABILITY ENDPOINTS (Groq-hosted Qwen 27B)
+# ==============================================================================
+
+@router.get("/llm/status", response_model=LLMStatusResponse)
+def get_llm_status(check: bool = Query(default=False, description="Verify live connectivity against Groq API")) -> LLMStatusResponse:
+    """Checks Groq Qwen 27B explainability service readiness and connectivity."""
+    return llm_explanation_service.get_status(check_connectivity=check)
+
+
+@router.post("/explain/change-detection", response_model=ExplanationResponse)
+def explain_change_detection_result(request: ExplainChangeDetectionRequest) -> ExplanationResponse:
+    """Generates an evidence-grounded natural language explanation for a change detection prediction."""
+    try:
+        return llm_explanation_service.explain_change_detection(request)
+    except PermissionError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Groq API authentication failed. Please verify GROQ_API_KEY in .env.",
+        )
+    except TimeoutError as e:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Groq API explanation timed out: {str(e)}",
+        )
+    except RuntimeError as e:
+        msg = str(e)
+        if "rate limit" in msg.lower() or "429" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Groq API rate limit or quota exceeded. Please retry in a few moments.",
+            )
+        elif "not configured" in msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Groq LLM explanation service is not configured. Add GROQ_API_KEY to .env.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Explanation generation failed: {msg}",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected failure during explanation generation.",
+        )
+
+
+@router.post("/explain/semantic-search", response_model=ExplanationResponse)
+def explain_semantic_search_result(request: ExplainSearchRequest) -> ExplanationResponse:
+    """Generates an evidence-grounded natural language explanation for a semantic retrieval result."""
+    try:
+        return llm_explanation_service.explain_semantic_search(request)
+    except PermissionError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Groq API authentication failed. Please verify GROQ_API_KEY in .env.",
+        )
+    except TimeoutError as e:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Groq API explanation timed out: {str(e)}",
+        )
+    except RuntimeError as e:
+        msg = str(e)
+        if "rate limit" in msg.lower() or "429" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Groq API rate limit or quota exceeded. Please retry in a few moments.",
+            )
+        elif "not configured" in msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Groq LLM explanation service is not configured. Add GROQ_API_KEY to .env.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Explanation generation failed: {msg}",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected failure during explanation generation.",
+        )
+
+

@@ -108,3 +108,51 @@ export async function getBenchmarkData() {
   });
   return handleResponse(resp);
 }
+
+/**
+ * Check Groq LLM explanation service status.
+ * @param {boolean} checkLive
+ * @returns {Promise<{configured: boolean, provider: string, model: string, status: string, connectivity: string, message: string}>}
+ */
+export async function getLLMStatus(checkLive = false) {
+  const url = `${API_BASE}/api/llm/status${checkLive ? "?check=true" : ""}`;
+  const resp = await fetch(url, {
+    headers: { "Accept": "application/json" }
+  });
+  return handleResponse(resp);
+}
+
+/**
+ * Request an evidence-grounded explanation for a change detection prediction.
+ * @param {Object} payload 
+ * @returns {Promise<Object>}
+ */
+export async function explainChangeDetection(payload) {
+  const resp = await fetch(`${API_BASE}/api/explain/change-detection`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  return handleResponse(resp);
+}
+
+/**
+ * Request an evidence-grounded explanation for a semantic search result.
+ * @param {Object} payload 
+ * @returns {Promise<Object>}
+ */
+export async function explainSearchResult(payload) {
+  const resp = await fetch(`${API_BASE}/api/explain/semantic-search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  return handleResponse(resp);
+}
+

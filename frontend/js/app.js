@@ -54,6 +54,8 @@ class App {
         const activePanel = document.getElementById(`panel-${targetTab}`);
         if (activePanel) {
           activePanel.classList.add("active");
+          window.dispatchEvent(new Event("resize"));
+          document.dispatchEvent(new CustomEvent("tab-switched", { detail: { tab: targetTab } }));
         }
       });
     });

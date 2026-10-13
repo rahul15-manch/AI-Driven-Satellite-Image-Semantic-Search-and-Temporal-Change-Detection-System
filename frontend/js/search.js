@@ -1,8 +1,4 @@
-/**
- * Semantic Search Module for RSICD Cross-Modal Retrieval
- */
-
-import { searchGallery } from "./api.js";
+import { searchGallery, explainSearchResult } from "./api.js";
 
 export function initSearch() {
   const form = document.getElementById("search-form");
@@ -20,6 +16,9 @@ export function initSearch() {
   
   const resultsContainer = document.getElementById("search-results-container");
   const chipButtons = document.querySelectorAll(".chip-btn");
+
+  // Keep track of current query and dataset results for explain calls
+  let currentSearchData = null;
 
   // Query chips click handler
   chipButtons.forEach(btn => {
@@ -51,6 +50,7 @@ export function initSearch() {
 
     try {
       const response = await searchGallery(query, method, topK);
+      currentSearchData = response;
       renderResults(response);
     } catch (err) {
       window.app?.showAlert(`Semantic search failed: ${err.message}`, "error");
@@ -60,6 +60,61 @@ export function initSearch() {
       btnSpinner.classList.add("hidden");
     }
   });
+
+  function renderExplanationCard(exp) {
+    const evidenceItems = (exp.supporting_evidence || [])
+      .map(e => `<li>${escapeHtml(e)}</li>`)
+      .join("");
+    const limitationItems = (exp.limitations || [])
+      .map(l => `<li>${escapeHtml(l)}</li>`)
+      .join("");
+    const unknownItems = (exp.unknowns || [])
+      .map(u => `<li>${escapeHtml(u)}</li>`)
+      .join("");
+
+    return `
+      <div class="explanation-card">
+        <div class="explanation-card-header">
+          <div class="explanation-title">
+            <span>💡</span> AI Model Explanation
+          </div>
+          <div class="explanation-badges">
+            <span class="badge-source-model">Source: ${escapeHtml(exp.source_model)}</span>
+            <span class="badge-qwen-model">Explainer: Qwen 27B (Groq)</span>
+          </div>
+        </div>
+        <div class="explanation-card-body">
+          <div class="explanation-summary-box">
+            <p>${escapeHtml(exp.prediction_summary)}</p>
+          </div>
+          <div class="explanation-details-grid">
+            <div class="explanation-detail-col col-evidence">
+              <h5><span>✓</span> Supporting Evidence</h5>
+              <ul>${evidenceItems || "<li>Evidence derived from query and similarity ranking telemetry.</li>"}</ul>
+            </div>
+            <div class="explanation-detail-col col-limitations">
+              <h5><span>⚠</span> Documented Limitations</h5>
+              <ul>${limitationItems || "<li>Subject to general embedding representation constraints.</li>"}</ul>
+            </div>
+            <div class="explanation-detail-col col-unknowns">
+              <h5><span>?</span> Unknowns / Missing</h5>
+              <ul>${unknownItems || "<li>Sub-pixel spatial attributes unavailable.</li>"}</ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   function renderResults(data) {
     metaBar.style.display = "flex";
@@ -85,7 +140,7 @@ export function initSearch() {
       return;
     }
 
-    let cardsHtml = '<div class="results-grid">';
+    let cardsHtml = '<div class="search-results-list">';
     data.results.forEach(item => {
       const scoreFormatted = data.method.includes("clip") || data.method.includes("ensemble")
         ? `${(item.similarity_score * 100).toFixed(1)}%`
@@ -100,19 +155,30 @@ export function initSearch() {
         : "No caption metadata available.";
 
       cardsHtml += `
-        <div class="result-card">
-          <div class="result-img-wrapper" data-src="${item.image_url}" data-caption="${item.filename} (Rank ${item.rank}, ${scoreLabel}: ${scoreFormatted})">
-            <img src="${item.image_url}" alt="${item.filename}" loading="lazy">
-            <div class="result-rank">#${item.rank}</div>
-          </div>
-          <div class="result-info">
-            <div class="result-header">
-              <span class="result-category">${item.category}</span>
-              <span class="result-score" title="${scoreLabel}">${scoreFormatted}</span>
+        <div class="search-result-card" data-rank="${item.rank}">
+          <div class="search-result-main">
+            <div class="search-result-thumb-box result-img-wrapper" data-src="${item.image_url}" data-caption="${escapeHtml(item.filename)} (Rank ${item.rank}, ${scoreLabel}: ${scoreFormatted})">
+              <img src="${item.image_url}" alt="${escapeHtml(item.filename)}" loading="lazy">
+              <div class="rank-badge">#${item.rank}</div>
+              <div class="category-tag">${escapeHtml(item.category)}</div>
             </div>
-            <div class="result-filename" title="${item.filename}">${item.filename}</div>
-            <p class="result-caption" title="${firstCaption}">${firstCaption}</p>
+            <div class="search-result-content">
+              <div class="search-result-meta-row">
+                <div class="search-result-filename" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</div>
+                <div class="search-result-score-badge" title="${scoreLabel}">
+                  <span class="score-type-label">${scoreLabel}:</span>
+                  <span class="score-val">${scoreFormatted}</span>
+                </div>
+              </div>
+              <p class="search-result-caption" title="${escapeHtml(firstCaption)}">${escapeHtml(firstCaption)}</p>
+              <div class="search-result-actions">
+                <button type="button" class="btn-explain btn-explain-search" data-rank="${item.rank}">
+                  <span class="explain-icon">💡</span> Explain This Result (Qwen 27B)
+                </button>
+              </div>
+            </div>
           </div>
+          <div class="explanation-slot" id="explain-slot-${item.rank}"></div>
         </div>
       `;
     });
@@ -128,5 +194,60 @@ export function initSearch() {
         window.app?.openModal(src, caption);
       });
     });
+
+    // Attach explain buttons
+    resultsContainer.querySelectorAll(".btn-explain-search").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const rank = parseInt(btn.getAttribute("data-rank"), 10);
+        const item = data.results.find(r => r.rank === rank);
+        if (!item) return;
+
+        const slot = document.getElementById(`explain-slot-${rank}`);
+        if (!slot) return;
+
+        // Toggle if already visible
+        if (slot.innerHTML.trim() !== "") {
+          slot.innerHTML = "";
+          btn.innerHTML = `<span class="explain-icon">💡</span> Explain This Result (Qwen 27B)`;
+          return;
+        }
+
+        const originalBtnHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Analyzing with Qwen 27B...</span>`;
+
+        try {
+          const payload = {
+            query: data.query,
+            method: data.method,
+            image_id: item.image_id,
+            filename: item.filename,
+            rank: item.rank,
+            score: item.similarity_score,
+            score_type: data.method.includes("clip") || data.method.includes("ensemble") ? "Cosine Similarity" : "BM25 Score",
+            category: item.category,
+            captions: item.captions || []
+          };
+          const explanation = await explainSearchResult(payload);
+          slot.innerHTML = renderExplanationCard(explanation);
+          btn.innerHTML = `<span class="explain-icon">✕</span> Hide Explanation`;
+        } catch (err) {
+          slot.innerHTML = `
+            <div class="explanation-error-state">
+              <span>Could not generate explanation: ${escapeHtml(err.message)}</span>
+              <button type="button" class="btn-explain-retry">Retry</button>
+            </div>
+          `;
+          slot.querySelector(".btn-explain-retry")?.addEventListener("click", () => {
+            slot.innerHTML = "";
+            btn.click();
+          });
+          btn.innerHTML = originalBtnHtml;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 }
+

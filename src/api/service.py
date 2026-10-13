@@ -497,14 +497,181 @@ class BenchmarkService:
                     "exchange_ratio": c_data.get("operational_benefit_ratio", 0.0),
                 })
 
+        # Curated catalog of publication research figures across milestones
+        catalog = [
+            # --- Milestone M13 End-to-End ---
+            {
+                "name": "m13_cd_pareto_frontier.png",
+                "milestone": "m13",
+                "category": "Milestone M13 End-to-End",
+                "category_key": "m13",
+                "title": "M13 Change Detection Pareto Frontier (F1 vs CPU Inference Latency)",
+                "description": "Multi-detector Pareto efficiency frontier relating F1 score to CPU inference latency (ms) across all 8 evaluated change detectors on LEVIR-CD.",
+            },
+            {
+                "name": "m13_retrieval_tradeoff.png",
+                "milestone": "m13",
+                "category": "Milestone M13 End-to-End",
+                "category_key": "m13",
+                "title": "M13 Semantic Retrieval Trade-Off (Recall vs CPU Latency)",
+                "description": "Comparative trade-off between CLIP ViT-B/32 dense semantic retrieval and BM25 sparse lexical search across RSICD test queries.",
+            },
+            {
+                "name": "m13_qat_ablation_waterfall.png",
+                "milestone": "m13",
+                "category": "Milestone M13 End-to-End",
+                "category_key": "m13",
+                "title": "M13 QAT-CD Component Ablation Waterfall Analysis",
+                "description": "Stepwise contribution of quality attenuation, difference threshold gating, and spatial filtering to overall F1 score and false-positive reduction.",
+            },
+            {
+                "name": "m13_gamma_sensitivity_curve.png",
+                "milestone": "m13",
+                "category": "Milestone M13 End-to-End",
+                "category_key": "m13",
+                "title": "M13 Quality Attenuation Parameter Sensitivity Curve",
+                "description": "Continuous sweep of attenuation factor gamma in [0.0, 1.0], displaying false-positive pixel count suppression and test F1 preservation.",
+            },
+            # --- Milestone M11 Benchmark ---
+            {
+                "name": "precision_recall_tradeoff.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 Precision-Recall Frontier with Iso-F1 Contours",
+                "description": "Scatter plot of Precision vs Recall across all 8 evaluated change detectors, overlaid with iso-F1 contours on the 128 LEVIR-CD test scenes.",
+            },
+            {
+                "name": "f1_iou_benchmark_bars.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 F1 Score & IoU Benchmark with 95% Bootstrap CI",
+                "description": "Clustered bar chart of F1 score and IoU with 95% confidence intervals derived from 1,000 bootstrap resamples on the 128 test scenes.",
+            },
+            {
+                "name": "false_positive_reduction_log.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 False Positive Pixel Reduction (Log Scale)",
+                "description": "Total false-positive pixels across 128 test scenes (134.2M pixels), highlighting dramatic false-alarm suppression in QAT-CD.",
+            },
+            {
+                "name": "cpu_latency_vs_f1.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 CPU Latency vs F1 Score Operational Efficiency Frontier",
+                "description": "Efficiency frontier relating CPU latency (ms) to F1 score, where bubble area is proportional to model parameter count.",
+            },
+            {
+                "name": "per_scene_f1_distribution.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 Per-Scene F1 Distribution (Box Plots)",
+                "description": "Box plot showing the variance, median dispersion, and outlier distribution of scene-level F1 scores across 128 evaluation scenes.",
+            },
+            {
+                "name": "qat_ablation_tradeoff.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 Quality-Aware Attenuation Signal Ablation Trade-off",
+                "description": "Multi-bar trade-off chart illustrating false-positive reduction percentage, precision gain, and recall drop across QAT-CD conditions.",
+            },
+            {
+                "name": "cross_model_robustness.png",
+                "milestone": "m11",
+                "category": "Milestone M11 Benchmark",
+                "category_key": "m11",
+                "title": "M11 Cross-Model Environmental Stress Robustness",
+                "description": "Line plot tracing relative F1 degradation under illumination shifts, gaussian blur, and geometric misregistration perturbations.",
+            },
+            # --- Milestone M10 QAT-CD ---
+            {
+                "name": "detector_comparison_m5_to_m10.png",
+                "milestone": "m10",
+                "category": "Milestone M10 QAT-CD",
+                "category_key": "m10",
+                "title": "M10 Detector Benchmark Comparison (M5 to M10)",
+                "description": "Progression bar chart tracing F1 and IoU metric advancements from classical baselines to Quality-Aware Temporal CD.",
+            },
+            {
+                "name": "validation_calibration_surface.png",
+                "milestone": "m10",
+                "category": "Milestone M10 QAT-CD",
+                "category_key": "m10",
+                "title": "M10 Validation Calibration Surface (Gamma x Tau Grid)",
+                "description": "Validation F1 response surface mapping optimal quality attenuation factor gamma and binarization threshold tau.",
+            },
+            {
+                "name": "ablation_f1_comparison.png",
+                "milestone": "m10",
+                "category": "Milestone M10 QAT-CD",
+                "category_key": "m10",
+                "title": "M10 Gating Component Ablation Comparison",
+                "description": "Test set F1 score comparison across baseline, attenuation-only, gating-only, and full QAT-CD calibrated configurations.",
+            },
+            # --- Milestone M6 & M5 Baselines ---
+            {
+                "name": "detector_perturbation_heatmap.png",
+                "milestone": "m6",
+                "category": "Milestone M6 & M5 Baselines",
+                "category_key": "m6-m5",
+                "title": "M6 Environmental Perturbation Sensitivity Heatmap",
+                "description": "Heatmap matrix documenting detector resilience across environmental stress conditions and severity levels.",
+            },
+            {
+                "name": "f1_vs_severity.png",
+                "milestone": "m6",
+                "category": "Milestone M6 & M5 Baselines",
+                "category_key": "m6-m5",
+                "title": "M6 F1 Degradation vs Perturbation Severity",
+                "description": "Parametric performance decay trajectories as blur, illumination, and registration noise escalate.",
+            },
+            {
+                "name": "validation_threshold_curves.png",
+                "milestone": "m5",
+                "category": "Milestone M6 & M5 Baselines",
+                "category_key": "m6-m5",
+                "title": "M5 Classical Baselines Validation Threshold Calibration",
+                "description": "Validation sweep curves across B1 Pixel Diff, B2 SSIM Dissimilarity, and B3 CVA establishing frozen optimal thresholds.",
+            },
+        ]
+
         figures = []
-        if fig_dir.exists():
-            for fig_p in sorted(fig_dir.glob("*.png")):
+        seen_names = set()
+        for item in catalog:
+            fig_p = ROOT / "experiments" / "figures" / item["milestone"] / item["name"]
+            if fig_p.exists() and fig_p.is_file():
                 figures.append({
-                    "name": fig_p.name,
-                    "url": f"/api/figures/{fig_p.name}",
-                    "title": fig_p.stem.replace("_", " ").title(),
+                    "name": item["name"],
+                    "url": f"/api/figures/{item['name']}",
+                    "title": item["title"],
+                    "category": item["category"],
+                    "category_key": item["category_key"],
+                    "description": item["description"],
                 })
+                seen_names.add(item["name"])
+
+        # Dynamically append any remaining uncataloged publication PNGs
+        for md in ["m13", "m11", "m10", "m6", "m5"]:
+            d = ROOT / "experiments" / "figures" / md
+            if d.exists():
+                for p in sorted(d.glob("*.png")):
+                    if p.name not in seen_names and not p.name.startswith(("qualitative_test", "qualitative_comparison")):
+                        figures.append({
+                            "name": p.name,
+                            "url": f"/api/figures/{p.name}",
+                            "title": p.stem.replace("_", " ").title(),
+                            "category": f"Milestone {md.upper()}",
+                            "category_key": md,
+                            "description": f"Precomputed research visualization artifact from {md.upper()}.",
+                        })
+                        seen_names.add(p.name)
+
 
         return {
             "models": models_summary,
@@ -524,3 +691,5 @@ class BenchmarkService:
 retrieval_service = RetrievalService()
 change_detection_service = ChangeDetectionService()
 benchmark_service = BenchmarkService()
+from src.api.llm_service import llm_explanation_service, LLMExplanationService
+

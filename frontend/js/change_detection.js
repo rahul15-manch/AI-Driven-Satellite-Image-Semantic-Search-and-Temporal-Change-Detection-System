@@ -1,10 +1,4 @@
-/**
- * Bi-Temporal Change Detection Module
- * Connects to /api/change-detection and visualizes continuous heatmaps,
- * binary masks, diagnostic overlays, and ground-truth metrics.
- */
-
-import { getTestPairs, detectChange } from "./api.js";
+import { getTestPairs, detectChange, explainChangeDetection } from "./api.js";
 
 export async function initChangeDetection() {
   const form = document.getElementById("change-form");
@@ -39,6 +33,11 @@ export async function initChangeDetection() {
   const valAccuracy = document.getElementById("val-accuracy");
   const valFp = document.getElementById("val-fp");
 
+  const btnExplainChange = document.getElementById("btn-explain-change");
+  const changeExplanationSlot = document.getElementById("change-explanation-slot");
+
+  let lastDetectionResult = null;
+
   // Load available test scene pairs from backend
   try {
     const pairs = await getTestPairs();
@@ -46,8 +45,13 @@ export async function initChangeDetection() {
       pairSelect.innerHTML = "";
       pairs.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.pair_id;
-        opt.textContent = `${p.name} ${p.has_ground_truth ? "(Ground Truth Available)" : "(Unlabeled)"}`;
+        opt.value = p.pair_id || p.id || "";
+        const rawIdentifier = p.pair_id || p.name || p.id || "";
+        const sceneName = (rawIdentifier && rawIdentifier !== "undefined" && rawIdentifier !== "null")
+          ? String(rawIdentifier).trim()
+          : "Scene identifier unavailable";
+        const gtLabel = p.has_ground_truth ? "(Ground Truth Available)" : "(Unlabeled)";
+        opt.textContent = `${sceneName} ${gtLabel}`;
         pairSelect.appendChild(opt);
       });
     }
@@ -57,10 +61,13 @@ export async function initChangeDetection() {
 
   // Model selection listener for QAT-CD options
   modelSelect.addEventListener("change", () => {
+    const optionsGrid = form.querySelector(".change-options-grid, .change-detection-config");
     if (modelSelect.value === "M10_QAT_CD") {
       qatOptionsGroup.style.display = "block";
+      optionsGrid?.classList.add("has-qat");
     } else {
       qatOptionsGroup.style.display = "none";
+      optionsGrid?.classList.remove("has-qat");
     }
   });
 
@@ -88,6 +95,106 @@ export async function initChangeDetection() {
   attachModalPreview(viewMask, "Predicted Binary Change Mask (>= τ*)");
   attachModalPreview(viewOverlay, "Diagnostic Confusion Overlay (TP: Green, FP: Red, FN: Blue)");
 
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function renderExplanationCard(exp) {
+    const evidenceItems = (exp.supporting_evidence || [])
+      .map(e => `<li>${escapeHtml(e)}</li>`)
+      .join("");
+    const limitationItems = (exp.limitations || [])
+      .map(l => `<li>${escapeHtml(l)}</li>`)
+      .join("");
+    const unknownItems = (exp.unknowns || [])
+      .map(u => `<li>${escapeHtml(u)}</li>`)
+      .join("");
+
+    return `
+      <div class="explanation-card">
+        <div class="explanation-card-header">
+          <div class="explanation-title">
+            <span>💡</span> AI Model Explanation
+          </div>
+          <div class="explanation-badges">
+            <span class="badge-source-model">Source: ${escapeHtml(exp.source_model)}</span>
+            <span class="badge-qwen-model">Explainer: Qwen 27B (Groq)</span>
+          </div>
+        </div>
+        <div class="explanation-card-body">
+          <div class="explanation-summary-box">
+            <p>${escapeHtml(exp.prediction_summary)}</p>
+          </div>
+          <div class="explanation-details-grid">
+            <div class="explanation-detail-col col-evidence">
+              <h5><span>✓</span> Supporting Evidence</h5>
+              <ul>${evidenceItems || "<li>Evidence derived from detection telemetry.</li>"}</ul>
+            </div>
+            <div class="explanation-detail-col col-limitations">
+              <h5><span>⚠</span> Documented Limitations</h5>
+              <ul>${limitationItems || "<li>Subject to resolution and environmental calibration limits.</li>"}</ul>
+            </div>
+            <div class="explanation-detail-col col-unknowns">
+              <h5><span>?</span> Unknowns / Missing</h5>
+              <ul>${unknownItems || "<li>Semantic object classification unavailable.</li>"}</ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Explain Button Click Listener
+  btnExplainChange?.addEventListener("click", async () => {
+    if (!lastDetectionResult) return;
+    if (!changeExplanationSlot) return;
+
+    // Toggle if already shown
+    if (changeExplanationSlot.innerHTML.trim() !== "") {
+      changeExplanationSlot.innerHTML = "";
+      btnExplainChange.innerHTML = `<span class="explain-icon">💡</span> Explain This Prediction (Qwen 27B)`;
+      return;
+    }
+
+    const originalBtnHtml = btnExplainChange.innerHTML;
+    btnExplainChange.disabled = true;
+    btnExplainChange.innerHTML = `<span>⏳ Analyzing Prediction with Qwen 27B...</span>`;
+
+    try {
+      const payload = {
+        pair_id: lastDetectionResult.pair_id || pairSelect.value,
+        model_id: lastDetectionResult.model || lastDetectionResult.model_id,
+        threshold: lastDetectionResult.threshold,
+        gamma: lastDetectionResult.diagnostics?.gamma || (modelSelect.value === "M10_QAT_CD" ? parseFloat(qatGammaSelect.value) : 0.0),
+        metrics: lastDetectionResult.metrics || null
+      };
+
+      const explanation = await explainChangeDetection(payload);
+      changeExplanationSlot.innerHTML = renderExplanationCard(explanation);
+      btnExplainChange.innerHTML = `<span class="explain-icon">✕</span> Hide Prediction Explanation`;
+    } catch (err) {
+      changeExplanationSlot.innerHTML = `
+        <div class="explanation-error-state">
+          <span>Could not generate explanation: ${escapeHtml(err.message)}</span>
+          <button type="button" class="btn-explain-retry" id="btn-explain-cd-retry">Retry</button>
+        </div>
+      `;
+      document.getElementById("btn-explain-cd-retry")?.addEventListener("click", () => {
+        changeExplanationSlot.innerHTML = "";
+        btnExplainChange.click();
+      });
+      btnExplainChange.innerHTML = originalBtnHtml;
+    } finally {
+      btnExplainChange.disabled = false;
+    }
+  });
+
   // Form submission handler
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -97,6 +204,14 @@ export async function initChangeDetection() {
     const gamma = model === "M10_QAT_CD" ? parseFloat(qatGammaSelect.value) : 0.0;
     const threshold = threshOverride.value ? parseFloat(threshOverride.value) : null;
 
+    // Clear previous explanation
+    if (changeExplanationSlot) {
+      changeExplanationSlot.innerHTML = "";
+      if (btnExplainChange) {
+        btnExplainChange.innerHTML = `<span class="explain-icon">💡</span> Explain This Prediction (Qwen 27B)`;
+      }
+    }
+
     // Loading UI state
     submitBtn.disabled = true;
     btnText.textContent = "Running Inference...";
@@ -104,6 +219,7 @@ export async function initChangeDetection() {
 
     try {
       const result = await detectChange(pairId, model, threshold, gamma);
+      lastDetectionResult = result;
       
       // Update Ribbon
       ribbonModel.textContent = result.model;
@@ -145,3 +261,4 @@ export async function initChangeDetection() {
     }
   });
 }
+

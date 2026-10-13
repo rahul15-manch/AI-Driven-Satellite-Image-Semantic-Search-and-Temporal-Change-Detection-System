@@ -96,6 +96,7 @@ def test_get_pairs_endpoint(client):
     test_1 = next((p for p in pairs if p["pair_id"] == "test_1"), None)
     assert test_1 is not None
     assert test_1["has_ground_truth"] is True
+    assert test_1["name"] == "test_1"
 
 
 def test_change_detection_classical_b1(client):
@@ -195,3 +196,48 @@ def test_static_files_serving(client):
     for js_file in ["api.js", "app.js", "search.js", "change_detection.js", "results.js"]:
         js_resp = client.get(f"/js/{js_file}")
         assert js_resp.status_code == 200
+
+
+def test_research_figures_endpoint_coverage(client):
+    """Verifies that all research publication figures across milestones return HTTP 200."""
+    benchmark_resp = client.get("/api/benchmark")
+    assert benchmark_resp.status_code == 200
+    data = benchmark_resp.json()
+    figures = data.get("figures", [])
+    assert len(figures) >= 15, f"Expected at least 15 figures, got {len(figures)}"
+
+    # Check that M13 figures are included
+    m13_names = [f["name"] for f in figures if "m13" in f.get("name", "")]
+    assert "m13_retrieval_tradeoff.png" in m13_names
+    assert "m13_cd_pareto_frontier.png" in m13_names
+    assert "m13_qat_ablation_waterfall.png" in m13_names
+    assert "m13_gamma_sensitivity_curve.png" in m13_names
+
+    # Check that M11 figures are included
+    m11_names = [f["name"] for f in figures]
+    assert "precision_recall_tradeoff.png" in m11_names
+    assert "f1_iou_benchmark_bars.png" in m11_names
+    assert "cpu_latency_vs_f1.png" in m11_names
+
+    # Check that every single returned figure URL returns 200 OK with PNG image
+    for fig in figures:
+        fig_resp = client.get(fig["url"])
+        assert fig_resp.status_code == 200, f"Figure URL {fig['url']} failed with {fig_resp.status_code}"
+        assert fig_resp.headers["content-type"] == "image/png"
+        assert len(fig_resp.content) > 1000, f"Figure {fig['name']} returned empty image data"
+
+
+def test_research_figures_error_and_security(client):
+    """Verifies error handling and traversal security for the figure endpoint."""
+    # Non-existent figure
+    resp_404 = client.get("/api/figures/non_existent_chart.png")
+    assert resp_404.status_code == 404
+
+    # Invalid extension
+    resp_400 = client.get("/api/figures/secret_data.txt")
+    assert resp_400.status_code == 400
+
+    # Path traversal attempt
+    resp_traversal = client.get("/api/figures/..%2F..%2F..%2Fetc%2Fpasswd")
+    assert resp_traversal.status_code in (400, 404)
+

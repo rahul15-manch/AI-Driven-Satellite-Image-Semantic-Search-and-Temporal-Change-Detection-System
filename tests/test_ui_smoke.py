@@ -203,6 +203,48 @@ class TestUIComponents:
         # FN pixel at (5, 5) -> Blue [59, 130, 246]
         assert list(overlay[5, 5]) == [59, 130, 246]
 
+    def test_app_startup(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "app.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"app.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"app.py rendered errors: {[e.value for e in at.error]}"
+
+    def test_overview_page(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "pages" / "overview.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"overview.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"overview.py rendered errors: {[e.value for e in at.error]}"
+
+    def test_dataset_page(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "pages" / "dataset.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"dataset.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"dataset.py rendered errors: {[e.value for e in at.error]}"
+
+    def test_retrieval_page(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "pages" / "retrieval.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"retrieval.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"retrieval.py rendered errors: {[e.value for e in at.error]}"
+
+    def test_change_detection_page(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "pages" / "change_detection.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"change_detection.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"change_detection.py rendered errors: {[e.value for e in at.error]}"
+
+    def test_false_alarm_page(self):
+        from streamlit.testing.v1 import AppTest
+        root = get_project_root()
+        at = AppTest.from_file(str(root / "pages" / "false_alarm.py"), default_timeout=30).run()
+        assert len(at.exception) == 0, f"false_alarm.py raised exceptions: {at.exception}"
+        assert len(at.error) == 0, f"false_alarm.py rendered errors: {[e.value for e in at.error]}"
+
     def test_all_pages_apptest(self):
         from streamlit.testing.v1 import AppTest
         root = get_project_root()
@@ -217,6 +259,62 @@ class TestUIComponents:
         for p in pages:
             at = AppTest.from_file(str(p), default_timeout=30).run()
             assert len(at.exception) == 0, f"Page {p} raised exceptions: {at.exception}"
+            assert len(at.error) == 0, f"Page {p} rendered errors: {[e.value for e in at.error]}"
+
+
+class TestRetrievalCacheIntegration:
+    """Verifies M4 semantic retrieval cache path resolution, metadata loading, and error handling."""
+
+    def test_cache_path_resolution_no_duplicate_clip(self):
+        cfg = load_m4_config()
+        root = get_project_root()
+        raw_cache = Path(cfg["paths"]["cache_dir"])
+        if raw_cache.name == "clip":
+            cache_dir = root / raw_cache
+        else:
+            cache_dir = root / raw_cache / "clip"
+
+        assert "clip/clip" not in str(cache_dir)
+        assert cache_dir.exists(), f"Resolved cache directory does not exist: {cache_dir}"
+        assert (cache_dir / "image_embeddings.npy").exists(), "Missing image_embeddings.npy"
+        assert (cache_dir / "metadata.json").exists(), "Missing metadata.json"
+
+    def test_existing_cache_metadata_contents(self):
+        cfg = load_m4_config()
+        root = get_project_root()
+        meta_path = root / cfg["paths"]["cache_dir"] / "metadata.json"
+        assert meta_path.exists()
+        import json
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        assert "image_ids" in meta
+        assert len(meta["image_ids"]) == 1093
+
+    def test_retrieval_engine_initializes_with_valid_cache(self):
+        from pages.retrieval import get_retrieval_engine
+        engine_tuple = get_retrieval_engine()
+        faiss_idx, clip_ret, bm25_ret, ensembler, (gallery_ids, cat_map), err = engine_tuple
+        assert err is None, f"get_retrieval_engine returned unexpected error: {err}"
+        assert faiss_idx is not None
+        assert faiss_idx.index.ntotal == 1093
+        assert len(gallery_ids) == 1093
+        assert clip_ret is not None
+
+    def test_missing_cache_metadata_produces_clear_diagnostic(self, monkeypatch, tmp_path):
+        import pages.retrieval
+        broken_config = load_m4_config()
+        broken_config["paths"]["cache_dir"] = str(tmp_path / "nonexistent_cache")
+        monkeypatch.setattr(pages.retrieval, "load_m4_config", lambda: broken_config)
+
+        # Clear cached resource to force re-execution with broken config
+        pages.retrieval.get_retrieval_engine.clear()
+        try:
+            res = pages.retrieval.get_retrieval_engine()
+            err = res[-1]
+            assert err is not None, "Expected error when cache path is missing"
+            assert "Precomputed CLIP embedding cache not found" in err
+        finally:
+            pages.retrieval.get_retrieval_engine.clear()
 
 
 class TestMilestoneBoundaries:

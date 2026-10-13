@@ -111,7 +111,7 @@ def plot_m5_detector_comparison(m5_summary_df: pd.DataFrame) -> plt.Figure:
     ax.set_ylabel("Metric Score (%)", fontsize=10, fontweight="bold")
     ax.set_title("Milestone 5: Classical Detector Test Performance (Frozen tau*)", fontsize=11, fontweight="bold")
     ax.set_xticks(x)
-    clean_labels = [m.replace("B1_", "B1: ").replace("B2_", "B2: ").replace("B3_", "B3: ").replace("_", " ") for m in methods]
+    clean_labels = [m.replace("B1_", "B1: ").replace("B2_", "B2: ").replace("B3_", "B3: ").replace("M7_", "M7: ").replace("M8_", "M8: ").replace("_", " ") for m in methods]
     ax.set_xticklabels(clean_labels, fontsize=9, fontweight="bold")
     ax.legend(loc="upper left", frameon=True)
     ax.grid(axis="y", linestyle="--", alpha=0.4)

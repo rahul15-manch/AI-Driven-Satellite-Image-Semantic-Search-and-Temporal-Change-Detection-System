@@ -1,0 +1,2 @@
+precision,recall,f1,iou,accuracy,tp,fp,fn,tn,total_pixels,gt_changed_pixels,pred_changed_pixels,gt_changed_ratio,pred_changed_ratio,method,threshold_source,threshold_value,mean_pair_latency_ms,p50_pair_latency_ms,p95_pair_latency_ms,total_runtime_s,peak_rss_mb
+0.09081942302060879,0.7758241285727742,0.1626041054431217,0.08849704406373274,0.5929254442453384,5304623,53103841,1532781,74276483,134217728,6837404,58408464,0.05094262957572937,0.4351769685745239,M8_SNUNet,Validation F1 (Frozen),0.5,2979.8585475233776,2953.206666499682,3302.981472798274,381.65331929199965,2039.28125

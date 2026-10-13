@@ -1,0 +1,14 @@
+{
+  "model_architecture": "SNUNet-CD",
+  "parameters": 563377,
+  "best_epoch": 5,
+  "best_val_f1": 0.14638815906015784,
+  "frozen_threshold": 0.5,
+  "test_f1": 0.1626041054431217,
+  "test_iou": 0.08849704406373274,
+  "test_precision": 0.09081942302060879,
+  "test_recall": 0.7758241285727742,
+  "seed": 42,
+  "device": "cpu",
+  "timestamp": "2026-10-13 17:45:46"
+}

@@ -48,12 +48,22 @@ def get_retrieval_engine():
     - Fitted BM25 Retriever
     """
     config = load_m4_config()
-    cache_dir = ROOT / config["paths"]["cache_dir"] / "clip"
+    raw_cache = Path(config["paths"]["cache_dir"])
+    if raw_cache.name == "clip":
+        cache_dir = ROOT / raw_cache
+    elif (ROOT / raw_cache / "clip").exists():
+        cache_dir = ROOT / raw_cache / "clip"
+    else:
+        cache_dir = ROOT / raw_cache
+
     emb_path = cache_dir / "image_embeddings.npy"
     meta_path = cache_dir / "metadata.json"
 
     if not emb_path.exists() or not meta_path.exists():
-        return None, None, None, None, None, "Precomputed CLIP embedding cache not found."
+        return None, None, None, None, None, (
+            f"Precomputed CLIP embedding cache not found at {cache_dir}. "
+            "Expected 'image_embeddings.npy' and 'metadata.json'."
+        )
 
     with open(meta_path, "r", encoding="utf-8") as f:
         meta = json.load(f)

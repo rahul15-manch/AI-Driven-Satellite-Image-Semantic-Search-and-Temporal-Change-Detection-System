@@ -1,0 +1,14 @@
+{
+  "model_architecture": "FC-Siam-diff",
+  "parameters": 1471409,
+  "best_epoch": 5,
+  "best_val_f1": 0.6110924432746925,
+  "frozen_threshold": 0.55,
+  "test_f1": 0.6034697565619987,
+  "test_iou": 0.4321207932284853,
+  "test_precision": 0.6280707432169407,
+  "test_recall": 0.5807233271575001,
+  "seed": 42,
+  "device": "cpu",
+  "timestamp": "2026-10-13 16:26:07"
+}

@@ -155,18 +155,19 @@ def render_overview_page():
             - **M4:** Leakage-controlled BM25 (LOCO & Metadata), CLIP ViT-B/32, and Prompt Ensemble on CPU.
             - **M5:** Classical bi-temporal baselines (B1 Pixel Diff, B2 SSIM, B3 CVA) with frozen validation thresholds.
             - **M6:** False-alarm diagnostic framework & 4 controlled non-ground perturbation families.
+            - **M7:** Learned Siamese U-Net (FC-Siam-diff) with frozen validation thresholding.
+            - **M8:** Advanced Dense Siamese Network (SNUNet-CD) with ECAM channel attention on CPU.
             """
         )
     with col_b:
         st.markdown(
             """
-            **Planned / Not Implemented in Current Frontend:**
-            - *M7:* Pretraining domain adaptation.
-            - *M8:* Learned Siamese CNN change detection models (FC-Siam-diff, SNUNet).
-            - *M9:* Quality-aware gating modules (QAT-CD).
-            - *M10+:* Integrated multi-task query-to-change pipeline.
+            **Planned Future Milestones (M9+):**
+            - *M9:* Quality-aware gating modules and quantization-aware training (QAT-CD).
+            - *M10:* Bi-temporal transformer architectures (BIT-CD).
+            - *M11+:* Integrated multi-task query-to-change pipeline.
             
-            *(These future milestones do not have working weights or evaluations in the repository and are intentionally absent from interactive features.)*
+            *(These future milestones remain unexecuted in strict compliance with milestone boundaries.)*
             """
         )
 

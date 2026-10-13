@@ -76,17 +76,51 @@ def get_change_detection_detectors():
     return extractor, detectors, frozen_thresholds
 
 
+@st.cache_resource
+def load_m7_detector():
+    """Initializes and caches the trained M7 FC-Siam-diff detector and frozen threshold."""
+    ckpt_path = ROOT / "experiments" / "checkpoints" / "m7" / "fc_siam_diff_best.pt"
+    if not ckpt_path.exists():
+        return None, None, None
+    try:
+        from src.change_detection.fc_siam_diff import FCSiamDiffDetector, load_checkpoint
+        model, metadata = load_checkpoint(ckpt_path, device="cpu")
+        detector = FCSiamDiffDetector(model=model, device="cpu", name="M7_FC_Siam_diff")
+        tau = float(metadata.get("frozen_threshold", 0.55))
+        return detector, tau, metadata
+    except Exception as e:
+        return None, None, {"error": str(e)}
+
+
+@st.cache_resource
+def load_m8_detector():
+    """Initializes and caches the trained M8 SNUNet detector and frozen threshold."""
+    ckpt_path = ROOT / "experiments" / "checkpoints" / "m8" / "snunet_best.pt"
+    if not ckpt_path.exists():
+        return None, None, None
+    try:
+        from src.change_detection.snunet import SNUNetDetector, load_checkpoint
+        model, metadata = load_checkpoint(ckpt_path, device="cpu")
+        detector = SNUNetDetector(model=model, device="cpu", name="M8_SNUNet")
+        tau = float(metadata.get("frozen_threshold", 0.50))
+        return detector, tau, metadata
+    except Exception as e:
+        return None, None, {"error": str(e)}
+
+
 def render_change_detection_page():
     """Renders the Bi-Temporal Change Detection page."""
     render_header(
         title="Bi-Temporal Change Detection",
-        subtitle="Classical Non-Learned Baselines on LEVIR-CD (1024×1024 Image Pairs, 0.5m GSD)",
-        badge_text="Milestone 5 Implemented",
+        subtitle="Classical Baselines, FC-Siam-diff & Dense Siamese SNUNet on LEVIR-CD (1024×1024 Pairs, 0.5m GSD)",
+        badge_text="Milestones 5, 7 & 8 Verified",
     )
 
     render_hardware_constraint_badge()
 
     extractor, detectors, frozen_thresholds = get_change_detection_detectors()
+    m7_det, m7_tau, m7_meta = load_m7_detector()
+    m8_det, m8_tau, m8_meta = load_m8_detector()
 
     # =========================================================================
     # SECTION 1: INTERACTIVE CHANGE DETECTOR
@@ -94,8 +128,8 @@ def render_change_detection_page():
     st.markdown("### Interactive Bi-Temporal Pair Detection")
     st.markdown(
         """
-        Select a real **LEVIR-CD test pair** and evaluate the classical change detection algorithms. 
-        Each detector operates patch-by-patch ($256 \\times 256$) with seamless $1024 \\times 1024$ mosaic reconstruction.
+        Select a real **LEVIR-CD test pair** and evaluate the change detection algorithms. 
+        Each detector operates patch-by-patch ($256 \\times 256$) with seamless $1024 \\times 1024$ mosaic reconstruction on CPU.
         """
     )
 
@@ -115,23 +149,43 @@ def render_change_detection_page():
     with col_select_pair:
         selected_pair = st.selectbox("Select LEVIR-CD Test Pair:", ordered_pairs, index=0)
 
+    det_options = [
+        "M8: SNUNet-CD (Densely Connected Siamese + ECAM)",
+        "M7: FC-Siam-diff (Learned Siamese U-Net)",
+        "B1: Pixel Difference (L1 Mean Intensity)",
+        "B2: SSIM Dissimilarity (1.0 - SSIM, 11x11 Gaussian)",
+        "B3: Change Vector Analysis (Normalized L2 Magnitude)",
+    ]
+
     with col_select_det:
+        default_idx = 0 if m8_det is not None else (1 if m7_det is not None else 2)
         detector_key = st.selectbox(
-            "Select Classical Detector:",
-            [
-                "B1: Pixel Difference (L1 Mean Intensity)",
-                "B2: SSIM Dissimilarity (1.0 - SSIM, 11x11 Gaussian)",
-                "B3: Change Vector Analysis (Normalized L2 Magnitude)",
-            ],
-            index=0,
+            "Select Change Detector:",
+            det_options,
+            index=default_idx,
         )
         det_name_map = {
             "B1: Pixel Difference (L1 Mean Intensity)": "B1_Pixel_Diff",
             "B2: SSIM Dissimilarity (1.0 - SSIM, 11x11 Gaussian)": "B2_SSIM",
             "B3: Change Vector Analysis (Normalized L2 Magnitude)": "B3_CVA",
+            "M7: FC-Siam-diff (Learned Siamese U-Net)": "M7_FC_Siam_diff",
+            "M8: SNUNet-CD (Densely Connected Siamese + ECAM)": "M8_SNUNet",
         }
         current_det_name = det_name_map[detector_key]
-        current_tau = frozen_thresholds[current_det_name]
+        if current_det_name == "M8_SNUNet":
+            if m8_det is None:
+                err_msg = m8_meta.get("error") if m8_meta else "Checkpoint not found at experiments/checkpoints/m8/snunet_best.pt"
+                st.error(f"M8 SNUNet detector unavailable: {err_msg}")
+                return
+            current_tau = m8_tau
+        elif current_det_name == "M7_FC_Siam_diff":
+            if m7_det is None:
+                err_msg = m7_meta.get("error") if m7_meta else "Checkpoint not found at experiments/checkpoints/m7/fc_siam_diff_best.pt"
+                st.error(f"M7 FC-Siam-diff detector unavailable: {err_msg}")
+                return
+            current_tau = m7_tau
+        else:
+            current_tau = frozen_thresholds[current_det_name]
 
     with col_diag_toggle:
         st.write("")
@@ -139,6 +193,16 @@ def render_change_detection_page():
         show_diagnostics = st.checkbox("Show Error Overlay", value=True)
 
     render_frozen_threshold_notice(threshold_val=current_tau, detector_name=current_det_name)
+    if current_det_name == "M8_SNUNet" and m8_meta:
+        st.caption(
+            f"Architecture: SNUNet-CD (563,377 parameters) | Best Val F1: {m8_meta.get('best_val_f1', 0.0):.4f} | "
+            f"Frozen Threshold tau*: {current_tau:.4f}"
+        )
+    elif current_det_name == "M7_FC_Siam_diff" and m7_meta:
+        st.caption(
+            f"Architecture: FC-Siam-diff (1,471,409 parameters) | Best Val F1: {m7_meta.get('best_val_f1', 0.0):.4f} | "
+            f"Frozen Threshold tau*: {current_tau:.4f}"
+        )
 
     # Load pair images
     p_t1 = ROOT / "data" / "raw" / "levir_cd" / "test" / "A" / f"{selected_pair}.png"
@@ -156,7 +220,12 @@ def render_change_detection_page():
 
     # Execute Live Change Detection on CPU
     t0 = time.perf_counter()
-    detector = detectors[current_det_name]
+    if current_det_name == "M8_SNUNet":
+        detector = m8_det
+    elif current_det_name == "M7_FC_Siam_diff":
+        detector = m7_det
+    else:
+        detector = detectors[current_det_name]
 
     # Extract 16 patches
     patches = extractor.extract_from_pair(img_a, img_b, gt_mask, parent_stem=selected_pair)
@@ -204,21 +273,51 @@ def render_change_detection_page():
         render_metric_card("False Positives", f"{cm.fp:,} px")
 
     # =========================================================================
-    # SECTION 2: OFFICIAL M5 BENCHMARK RESULTS TABLE
+    # SECTION 2: OFFICIAL BENCHMARK RESULTS TABLE
     # =========================================================================
     st.markdown("---")
-    st.markdown("### Official Benchmark Results (Milestone 5)")
-    st.markdown(
-        """
-        Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
-        Loaded dynamically from `experiments/results/m5/summary.json`.
-        """
-    )
+    m8_comp_file = ROOT / "experiments" / "results" / "m8" / "comparison_m5_m7_m8.json"
+    m7_comp_file = ROOT / "experiments" / "results" / "m7" / "comparison_m5_m7.json"
 
-    m5_summary_df = load_m5_summary()
-    if m5_summary_df is not None:
+    if m8_comp_file.exists():
+        import json
+        with open(m8_comp_file, "r", encoding="utf-8") as f:
+            comp_records = json.load(f)
+        summary_df = pd.DataFrame(comp_records)
+        st.markdown("### Official Benchmark Results (Classical Baselines vs. M7 FC-Siam-diff vs. M8 SNUNet-CD)")
+        st.markdown(
+            """
+            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
+            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff) and dense Siamese network (M8 SNUNet-CD) under strictly frozen validation thresholds $\\tau^*$.
+            Loaded dynamically from `experiments/results/m8/comparison_m5_m7_m8.json`.
+            """
+        )
+    elif m7_comp_file.exists():
+        import json
+        with open(m7_comp_file, "r", encoding="utf-8") as f:
+            comp_records = json.load(f)
+        summary_df = pd.DataFrame(comp_records)
+        st.markdown("### Official Benchmark Results (Classical Baselines vs. M7 FC-Siam-diff)")
+        st.markdown(
+            """
+            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
+            Compares classical non-learned baselines (B1, B2, B3) with learned Siamese U-Net (M7 FC-Siam-diff) under strictly frozen validation thresholds $\\tau^*$.
+            Loaded dynamically from `experiments/results/m7/comparison_m5_m7.json`.
+            """
+        )
+    else:
+        summary_df = load_m5_summary()
+        st.markdown("### Official Benchmark Results (Milestone 5)")
+        st.markdown(
+            """
+            Evaluated on the full **128 LEVIR-CD test pairs** ($134,217,728$ evaluation pixels; $6,837,404$ ground-truth changed pixels). 
+            Loaded dynamically from `experiments/results/m5/summary.json`.
+            """
+        )
+
+    if summary_df is not None and not summary_df.empty:
         # Filter and format
-        disp_df = m5_summary_df.copy()
+        disp_df = summary_df.copy()
         disp_df["Precision (%)"] = disp_df["precision"].apply(lambda v: f"{v*100:.2f}%")
         disp_df["Recall (%)"] = disp_df["recall"].apply(lambda v: f"{v*100:.2f}%")
         disp_df["F1 Score"] = disp_df["f1"].apply(lambda v: f"{v:.4f}")
@@ -245,9 +344,9 @@ def render_change_detection_page():
         )
 
         # Plot comparison chart
-        st.pyplot(plot_m5_detector_comparison(m5_summary_df))
+        st.pyplot(plot_m5_detector_comparison(summary_df))
     else:
-        st.warning("M5 summary results not found at experiments/results/m5/summary.json.")
+        st.warning("Benchmark results not found.")
 
     # =========================================================================
     # SECTION 3: VALIDATION CURVES & QUALITATIVE FIGURES

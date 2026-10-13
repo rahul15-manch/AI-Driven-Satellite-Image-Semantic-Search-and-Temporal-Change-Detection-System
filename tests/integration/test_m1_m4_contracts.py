@@ -21,11 +21,25 @@ import pytest
 from src.data.rsicd_loader import RSICDDataset
 
 
+def get_doc_path(filename: str) -> Path:
+    """Resolves markdown documentation path across repository directories (.md FIles, docs, root)."""
+    candidates = [
+        Path(".md FIles ") / filename,
+        Path(".md FIles") / filename,
+        Path("docs") / filename,
+        Path(filename),
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return candidates[0]
+
+
 @pytest.mark.integration
 def test_int_m1_01_research_questions_exist():
     """INT-M1-01: Verify RQ1, RQ2, RQ3, RQ4 exist in research_questions.md."""
-    rq_path = Path("research_questions.md")
-    assert rq_path.exists(), "research_questions.md must exist."
+    rq_path = get_doc_path("research_questions.md")
+    assert rq_path.exists(), f"research_questions.md must exist (searched: {rq_path})."
     content = rq_path.read_text(encoding="utf-8")
 
     assert "RQ1" in content, "RQ1 must be documented in research_questions.md"
@@ -39,7 +53,8 @@ def test_int_m1_01_research_questions_exist():
 @pytest.mark.integration
 def test_int_m1_02_hypotheses_exist():
     """INT-M1-02: Verify H1-H4 exist with measurable test criteria."""
-    rq_path = Path("research_questions.md")
+    rq_path = get_doc_path("research_questions.md")
+    assert rq_path.exists(), f"research_questions.md must exist (searched: {rq_path})."
     content = rq_path.read_text(encoding="utf-8")
 
     for h_id in ["H1", "H2", "H3", "H4"]:
@@ -51,8 +66,8 @@ def test_int_m1_02_hypotheses_exist():
 @pytest.mark.integration
 def test_int_m1_03_architecture_matches_implementation():
     """INT-M1-03: Verify documented semantic retrieval components match src/semantic_search."""
-    arch_path = Path("architecture.md")
-    assert arch_path.exists(), "architecture.md must exist."
+    arch_path = get_doc_path("architecture.md")
+    assert arch_path.exists(), f"architecture.md must exist (searched: {arch_path})."
     content = arch_path.read_text(encoding="utf-8")
     assert "Semantic Retrieval" in content or "semantic_search" in content, (
         "Semantic retrieval pipeline must be documented in architecture.md"
@@ -69,36 +84,63 @@ def test_int_m1_03_architecture_matches_implementation():
 
 @pytest.mark.integration
 def test_int_m1_04_milestone_boundary_compliance():
-    """INT-M1-04: Verify M4 did not implement M5/M6 functionality in src/.
+    """INT-M1-04: Verify architectural boundaries and milestone governance compliance.
 
-    Checks that active implementation files for pixel differencing, SSIM change detection,
-    CVA change detection, Siamese neural networks, and synthetic perturbation generators
-    do not exist in src/.
+    Verifies:
+    1. Future milestones beyond M8 (M9-M10+) are not implemented in src/.
+    2. The M1-M8 boundary is strictly preserved: M7 and M8 are recognized learned models.
+    3. Checkpoints for implemented learned models are authentic (not empty or mock).
     """
     src_dir = Path("src")
-    forbidden_terms = [
-        "class PixelDifferencer",
-        "class SSIMChangeDetector",
-        "class CVAChangeDetector",
-        "class FCSiamDiff",
-        "class SiameseNetwork",
-        "class PerturbationGenerator",
-        "class FalseAlarmFilter",
+    forbidden_future_terms = [
+        "class SiamUnet_diff",
+        "class BIT_CD",
+        "class QAT_CD",
+        "class QualityGatedCD",
     ]
 
     for py_file in src_dir.rglob("*.py"):
         content = py_file.read_text(encoding="utf-8")
-        for term in forbidden_terms:
+        for term in forbidden_future_terms:
             assert term not in content, (
-                f"Boundary violation: Found '{term}' in {py_file}. M5/M6 must not be implemented in M1-M4."
+                f"Boundary violation: Found future milestone term '{term}' in {py_file}."
             )
+
+    # Verify M9+ boundary: Future milestones beyond M8 are not implemented or checked in
+    checkpoints_m9 = Path("experiments/checkpoints/m9")
+    if checkpoints_m9.exists():
+        pts = list(checkpoints_m9.glob("*.pt")) + list(checkpoints_m9.glob("*.pth"))
+        assert len(pts) == 0, "M9 checkpoint found prematurely."
+
+    results_m9 = Path("experiments/results/m9")
+    if results_m9.exists():
+        res = list(results_m9.glob("*.csv")) + list(results_m9.glob("*.json"))
+        assert len(res) == 0, "M9 benchmark results found prematurely."
+
+    # If M7 checkpoint is present, verify it is authentic and valid (not empty or mock)
+    checkpoints_m7 = Path("experiments/checkpoints/m7")
+    if checkpoints_m7.exists():
+        for pt_file in checkpoints_m7.glob("*.pt"):
+            assert pt_file.stat().st_size > 1_000_000, f"M7 checkpoint {pt_file} is suspiciously small."
+
+    # If M8 checkpoint is present, verify it is authentic and valid
+    checkpoints_m8 = Path("experiments/checkpoints/m8")
+    if checkpoints_m8.exists():
+        for pt_file in checkpoints_m8.glob("*.pt"):
+            assert pt_file.stat().st_size > 500_000, f"M8 checkpoint {pt_file} is suspiciously small."
+
+    # Verify architecture.md documents M7 as downstream learned milestone dependent on M4/M5
+    arch_path = get_doc_path("architecture.md")
+    assert arch_path.exists()
+    arch_content = arch_path.read_text(encoding="utf-8")
+    assert "M7" in arch_content or "Learned" in arch_content
 
 
 @pytest.mark.integration
 def test_int_m1_05_experiment_plan_consistency():
     """INT-M1-05: Verify EXP-RET-01, EXP-RET-02, EXP-RET-03 correspond to A1, A2, A3 in experiment_plan.md."""
-    plan_path = Path("experiment_plan.md")
-    assert plan_path.exists(), "experiment_plan.md must exist."
+    plan_path = get_doc_path("experiment_plan.md")
+    assert plan_path.exists(), f"experiment_plan.md must exist (searched: {plan_path})."
     content = plan_path.read_text(encoding="utf-8")
 
     assert "EXP-RET-01" in content, "EXP-RET-01 must be in experiment_plan.md"

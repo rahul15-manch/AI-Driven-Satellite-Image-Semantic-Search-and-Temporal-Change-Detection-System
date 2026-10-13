@@ -48,3 +48,8 @@ def load_m6_config() -> Dict[str, Any]:
 
 def load_m7_config() -> Dict[str, Any]:
     return load_yaml_config("experiments/configs/m7_learned_cd.yaml")
+
+
+def load_m8_config() -> Dict[str, Any]:
+    return load_yaml_config("experiments/configs/m8_snunet.yaml")
+

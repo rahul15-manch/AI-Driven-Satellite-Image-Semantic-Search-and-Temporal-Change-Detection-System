@@ -12,7 +12,7 @@ import streamlit as st
 
 # Configure page metadata
 st.set_page_config(
-    page_title="Satellite AI — Research Dashboard (M1–M6)",
+    page_title="Satellite AI — Research Dashboard (M1–M8)",
     page_icon="🛰️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -60,7 +60,7 @@ def render_sidebar_metadata():
             <div style="font-weight: 700; color: #475569; margin-bottom: 0.3rem;">SYSTEM TELEMETRY</div>
             <div><strong>Profile:</strong> Strict CPU-Only</div>
             <div><strong>Active RSS:</strong> {mem_str} (&le; 8 GB)</div>
-            <div><strong>Boundary:</strong> M1–M6 Verified</div>
+            <div><strong>Boundary:</strong> M1–M8 Verified</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -71,7 +71,7 @@ def render_sidebar_metadata():
         <div style="margin-top: 1.5rem; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
             <strong>Implementation Governance:</strong><br>
             All displayed metrics originate directly from local benchmark files. 
-            Future milestones (M7+) remain unexecuted.
+            Future milestones (M9+) remain unexecuted.
         </div>
         """,
         unsafe_allow_html=True,

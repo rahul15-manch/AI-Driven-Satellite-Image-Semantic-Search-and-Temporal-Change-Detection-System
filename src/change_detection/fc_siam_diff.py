@@ -231,7 +231,8 @@ def load_checkpoint(
     checkpoint = torch.load(load_path, map_location=device, weights_only=False)
     kwargs = checkpoint.get("model_kwargs", {"in_channels": 3, "out_channels": 1, "base_channels": 16})
     model = FCSiamDiff(**kwargs)
-    model.load_state_dict(checkpoint["state_dict"])
+    state_dict = checkpoint.get("state_dict") if "state_dict" in checkpoint else checkpoint.get("model_state_dict")
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
 

@@ -8,7 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script defer src="vendor/katex/katex.min.js"></script>
+  <script defer src="vendor/katex/auto-render.min.js"></script>
 </head>
 <body>
   <!-- Header & Navigation -->
@@ -457,7 +460,7 @@
       </div>
 
       <div class="methodology-grid">
-        <div class="info-card">
+        <div class="info-card methodology-card">
           <h3>1. Semantic Retrieval Formulation (M4)</h3>
           <p>Cross-modal text-to-image retrieval maps natural language queries $q$ and aerial imagery $x$ into a shared 512-dimensional embedding space using OpenAI CLIP ViT-B/32. Vectors are $L_2$-normalized such that inner-product similarity corresponds strictly to cosine similarity.</p>
           <ul>
@@ -468,7 +471,7 @@
           </ul>
         </div>
 
-        <div class="info-card">
+        <div class="info-card methodology-card">
           <h3>2. Bi-Temporal Change Detection Formulation (M5&ndash;M10)</h3>
           <p>Given co-registered optical scenes $T_1, T_2 \in \mathbb{R}^{H \times W \times 3}$, models compute continuous change likelihoods $D(x, y) \in [0, 1]$, binarized at frozen validation threshold $\tau^*$:</p>
           <ul>
@@ -482,7 +485,7 @@
           </ul>
         </div>
 
-        <div class="info-card">
+        <div class="info-card methodology-card">
           <h3>3. Hardware Constraints & Fair Profiling</h3>
           <p>The entire research framework is constrained to commodity CPU hardware without cloud GPUs, CUDA, or distributed clusters:</p>
           <ul>
@@ -493,7 +496,7 @@
           </ul>
         </div>
 
-        <div class="info-card warning-border">
+        <div class="info-card warning-border methodology-card full-width">
           <h3>4. Scientific Limitations & Threats to Validity</h3>
           <p><strong>A. Closed-Benchmark Test Set Reuse:</strong> As recorded in the project devlog and decision logs, the official 128-scene LEVIR-CD test split has been evaluated repeatedly across milestones M5&ndash;M10. While decision thresholds were strictly calibrated on the 64 validation scenes, repeated inspection means test results represent a closed retrospective benchmark rather than an untouched prospective trial.</p>
           <p><strong>B. QAT-CD Active Gating is Exploratory:</strong> Under validation calibration optimizing for unweighted F1, the optimal attenuation strength was $\gamma^* = 0.0$ (identical to BIT-CD). The active gating setting ($\gamma = 0.30$) suppresses 29.19% of false alarms and raises precision by +5.42 pp, but slightly reduces unweighted F1. It must not be claimed as an unconditional F1 improvement.</p>

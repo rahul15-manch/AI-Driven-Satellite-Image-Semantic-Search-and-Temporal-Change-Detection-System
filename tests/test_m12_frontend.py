@@ -19,6 +19,10 @@ def test_frontend_directory_structure():
     assert (FRONTEND_DIR / "js" / "search.js").is_file()
     assert (FRONTEND_DIR / "js" / "change_detection.js").is_file()
     assert (FRONTEND_DIR / "js" / "results.js").is_file()
+    assert (FRONTEND_DIR / "js" / "methodology.js").is_file()
+    assert (FRONTEND_DIR / "vendor" / "katex" / "katex.min.js").is_file()
+    assert (FRONTEND_DIR / "vendor" / "katex" / "katex.min.css").is_file()
+    assert (FRONTEND_DIR / "vendor" / "katex" / "auto-render.min.js").is_file()
 
 
 def test_html_document_structure():
@@ -127,7 +131,7 @@ def test_css_design_system_tokens():
 
 
 def test_javascript_modules_export_syntax():
-    js_files = ["api.js", "search.js", "change_detection.js", "results.js", "app.js"]
+    js_files = ["api.js", "search.js", "change_detection.js", "results.js", "methodology.js", "app.js"]
     for jf in js_files:
         content = (FRONTEND_DIR / "js" / jf).read_text(encoding="utf-8")
         assert len(content.strip()) > 50
@@ -223,5 +227,58 @@ def test_scene_selector_labels_regression():
     assert 'rawIdentifier !== "null"' in js_content
     assert "Scene identifier unavailable" in js_content
     assert "Ground Truth Available" in js_content
+
+
+def test_methodology_math_and_grid_layout_css():
+    """Verifies Methodology & Limitations responsive 3-column layout, KaTeX dependencies, and math styling."""
+    html_content = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+    css_content = (FRONTEND_DIR / "css" / "styles.css").read_text(encoding="utf-8")
+    js_content = (FRONTEND_DIR / "js" / "methodology.js").read_text(encoding="utf-8")
+
+    # KaTeX assets linked in HTML head
+    assert "vendor/katex/katex.min.css" in html_content
+    assert "vendor/katex/katex.min.js" in html_content
+    assert "vendor/katex/auto-render.min.js" in html_content
+
+    # Methodology panel structure and classes
+    assert 'id="panel-methodology"' in html_content
+    assert "methodology-grid" in html_content
+    assert "methodology-card" in html_content
+
+    # Preserved scientific claims and notation
+    assert "RSICD" in html_content
+    assert "LEVIR-CD" in html_content
+    assert "CLIP ViT-B/32" in html_content
+    assert "IndexFlatIP" in html_content
+    assert r"\mathbb{R}^{H \times W \times 3}" in html_content
+    assert r"\tau^* = 0.4100" in html_content
+    assert r"\tau^* = 0.9000" in html_content
+    assert r"\tau^* = 0.4050" in html_content
+    assert r"\tau^* = 0.5500" in html_content
+    assert r"\tau^* = 0.5000" in html_content
+    assert r"\tau^* = 0.4500" in html_content
+    assert r"\gamma^* = 0.0" in html_content
+    assert r"\gamma = 0.30" in html_content
+
+    # Responsive 3-column grid in CSS
+    assert "repeat(3, minmax(0, 1fr))" in css_content
+    assert "repeat(2, minmax(0, 1fr))" in css_content
+    assert "gap: 24px" in css_content
+    assert "@media (max-width: 1000px)" in css_content
+    assert "@media (max-width: 650px)" in css_content
+
+    # Typography & overflow rules
+    assert "line-height: 1.4" in css_content
+    assert "line-height: 1.65" in css_content
+    assert "overflow-wrap: anywhere" in css_content
+    assert "overflow-x: auto" in css_content
+    assert "overflow-y: hidden" in css_content
+
+    # JS math renderer functions exist and handle auto-render & fallback
+    assert "renderMath" in js_content
+    assert "renderMathInElement" in js_content
+    assert "preprocessBareMath" in js_content
+    assert "renderFallbackMath" in js_content
+
 
 

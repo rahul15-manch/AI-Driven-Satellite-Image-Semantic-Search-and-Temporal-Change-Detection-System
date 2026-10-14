@@ -6,6 +6,7 @@ import { checkHealth } from "./api.js";
 import { initSearch } from "./search.js";
 import { initChangeDetection } from "./change_detection.js";
 import { initResults } from "./results.js";
+import { initMethodology } from "./methodology.js";
 
 class App {
   constructor() {
@@ -33,6 +34,7 @@ class App {
     initSearch();
     initChangeDetection();
     initResults();
+    initMethodology();
 
     // Check health periodically every 20 seconds
     setInterval(() => this.pollHealth(), 20000);

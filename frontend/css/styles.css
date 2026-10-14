@@ -1462,43 +1462,68 @@ input:checked + .slider:before {
 
 
 /* =============================================================================
-   METHODOLOGY CARDS
+   METHODOLOGY CARDS & MATHEMATICS
    ============================================================================= */
 
 .methodology-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 
+.methodology-card,
 .info-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.6rem;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  box-sizing: border-box;
+  height: auto;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
 }
 
+.methodology-card.full-width,
 .info-card.warning-border {
+  grid-column: 1 / -1;
   border-color: var(--color-yellow-ochre);
   border-left: 4px solid var(--color-yellow-ochre);
   background: linear-gradient(180deg, rgba(225, 169, 95, 0.12), var(--bg-card));
 }
 
+.methodology-card h2,
+.methodology-card h3,
 .info-card h3 {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-deep-bark);
   margin-bottom: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
+.methodology-card p,
+.methodology-card li,
+.info-card p,
+.info-card li {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.methodology-card p,
 .info-card p {
   font-size: 0.88rem;
   color: var(--color-taupe);
   margin-bottom: 0.75rem;
-  line-height: 1.6;
 }
 
+.methodology-card ul,
 .info-card ul {
   padding-left: 1.25rem;
   font-size: 0.85rem;
@@ -1508,8 +1533,76 @@ input:checked + .slider:before {
   gap: 0.4rem;
 }
 
+.methodology-card li strong,
 .info-card li strong {
   color: var(--color-charcoal-rock);
+}
+
+/* Math container and typesetting rules */
+.methodology-card mjx-container,
+.methodology-card .katex-display,
+.info-card .katex-display,
+.math-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: block;
+  margin: 0.75rem 0;
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+.methodology-card .katex,
+.info-card .katex,
+.math-inline,
+.math-sym,
+.math-var {
+  font-size: 1.02em;
+  color: var(--color-charcoal-rock);
+}
+
+.math-bb {
+  font-family: KaTeX_AMS, 'Times New Roman', serif;
+  font-weight: bold;
+}
+
+.math-sym,
+.math-var {
+  font-style: italic;
+  font-family: KaTeX_Math, 'Times New Roman', serif;
+}
+
+.math-sub, .math-sup {
+  font-size: 0.78em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.math-sup {
+  top: -0.45em;
+}
+
+.math-sub {
+  bottom: -0.22em;
+}
+
+.math-text {
+  font-style: normal;
+  font-family: inherit;
+}
+
+@media (max-width: 1000px) {
+  .methodology-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .methodology-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
 }
 
 /* =============================================================================

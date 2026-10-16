@@ -17,10 +17,10 @@
     "method": "M7_FC_Siam_diff",
     "threshold_source": "Validation F1 (Frozen)",
     "threshold_value": 0.55,
-    "mean_pair_latency_ms": 1278.1076311874954,
-    "p50_pair_latency_ms": 1337.9918334994727,
-    "p95_pair_latency_ms": 1633.613446149593,
-    "total_runtime_s": 163.7921390829997,
-    "peak_rss_mb": 2659.390625
+    "mean_pair_latency_ms": 784.5226731484445,
+    "p50_pair_latency_ms": 749.4712289990275,
+    "p95_pair_latency_ms": 898.5024854016956,
+    "total_runtime_s": 100.53224012500141,
+    "peak_rss_mb": 938.546875
   }
 ]

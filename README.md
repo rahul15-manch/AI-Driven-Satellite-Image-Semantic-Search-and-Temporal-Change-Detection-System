@@ -75,11 +75,7 @@ The research foundation is documented in detail across the following records:
     - Discovered core baseline failure modes: SSIM misregistration fragility ($+5.68\text{M}$ false alarms at 5 px shift), SSIM defocus collapse ($+12.82\%$ relative $F_1$ degradation under $\sigma=4.0$), and CVA/B1 cloud shadow false alarms ($+2.07\text{M}$ false positives).
     - Verified 100% bitwise repeatability across independent benchmark runs ($\Delta = 0.0$).
     - 115 passing tests across the repository (100% pass rate in 21.22s).
-- **Upcoming:**
-  - **Milestone 7:** Vision-Language Model Integration & Cross-Modal Alignment (Owner: Rahul).
-  - **Milestone 8:** Lightweight Learned Bi-Temporal Change Detection Model (Owner: Tanishka Mukhi).
-  - **Milestone 9:** Diagnostic Quality-Gated Change Detection Architecture (Owner: Adishri Abro).
-- **Current State:** Datasets verified; complete literature foundation and formal metrics codified; semantic retrieval and classical change detection baselines fully benchmarked on CPU; diagnostic robustness and false-alarm sensitivity experimentally established with complete reproducibility and zero data leakage.
+detection baselines fully benchmarked on CPU; diagnostic robustness and false-alarm sensitivity experimentally established with complete reproducibility and zero data leakage.
 
 
 

@@ -58,24 +58,6 @@ The research foundation is documented in detail across the following records:
 - [`decision_log.md`](./decision_log.md) — Formal record of architectural, technical, and research decisions (DEC-001 through DEC-035).
 - [`devlog.md`](./devlog.md) — Chronological engineering and research progress log.
 
----
-
-## 5. Current Project Status
-
-- **Completed:**
-  - **Milestone 1:** Research Definition & System Architecture (Owner: Rahul).
-  - **Milestone 2:** Dataset Acquisition, Verification & Preprocessing Pipeline (Owner: Tanishka Mukhi).
-  - **Milestone 3:** Comprehensive Literature Review, Mathematical Baseline Formulation & Metric Formalization (Owner: Adishri Abro).
-  - **Milestone 4 (Corrected):** Semantic Retrieval Baseline & Leakage-Controlled Evaluation (Owner: Rahul).
-  - **M1–M4 Integration Suite:** Full end-to-end integration validation across all 4 initial milestones.
-  - **Milestone 5:** Classical Bi-Temporal Change Detection Baselines (Owner: Tanishka Mukhi).
-  - **Milestone 6:** False-Alarm Analysis & Controlled Perturbation Robustness Evaluation (Owner: Adishri Abro).
-    - Designed and implemented 4 deterministic perturbation modules: Global Illumination Shift, Gaussian Blur, Geometric Misregistration, and Localized Occlusion/Shadow.
-    - Evaluated all 3 classical baselines (B1, B2, B3) across 12 perturbation conditions + Control using frozen M5 thresholds ($\tau^*_{\text{B1}}=0.4100, \tau^*_{\text{B2}}=0.9000, \tau^*_{\text{B3}}=0.4050$) over all 128 LEVIR-CD test pairs ($134,217,728$ pixels/condition).
-    - Discovered core baseline failure modes: SSIM misregistration fragility ($+5.68\text{M}$ false alarms at 5 px shift), SSIM defocus collapse ($+12.82\%$ relative $F_1$ degradation under $\sigma=4.0$), and CVA/B1 cloud shadow false alarms ($+2.07\text{M}$ false positives).
-    - Verified 100% bitwise repeatability across independent benchmark runs ($\Delta = 0.0$).
-    - 115 passing tests across the repository (100% pass rate in 21.22s).
-detection baselines fully benchmarked on CPU; diagnostic robustness and false-alarm sensitivity experimentally established with complete reproducibility and zero data leakage.
 
 
 

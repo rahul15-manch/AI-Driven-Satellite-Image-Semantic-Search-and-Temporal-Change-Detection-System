@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import time
+import hashlib
+import io
+import base64
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import numpy as np
@@ -15,9 +18,16 @@ from ui.components import (
     render_frozen_threshold_notice,
     render_hardware_constraint_badge,
     render_metric_card,
+    render_vari_caveat_banner,
+    render_registration_diagnostics_card,
 )
 from ui.charts import plot_m5_detector_comparison, display_research_figure
-from ui.image_viewer import render_change_detection_panel
+from ui.image_viewer import (
+    render_change_detection_panel,
+    render_temporal_understanding_panel,
+    create_temporal_overlay,
+)
+from src.api.service import temporal_understanding_service
 from utils.result_loader import (
     load_m5_summary,
     load_m5_thresholds,
@@ -161,6 +171,503 @@ def load_m10_detector():
         return None, None, {"error": str(e)}
 
 
+def decode_mask_data_uri(mask_data_uri: str) -> np.ndarray:
+    """Decodes a base64 PNG data URI into a binary boolean numpy array."""
+    if "," in mask_data_uri:
+        b64_str = mask_data_uri.split(",", 1)[1]
+    else:
+        b64_str = mask_data_uri
+    raw = base64.b64decode(b64_str)
+    pil_mask = Image.open(io.BytesIO(raw)).convert("L")
+    return (np.array(pil_mask) > 0).astype(np.uint8)
+
+
+def render_temporal_understanding_mode():
+    """Renders Phase 3D Temporal Satellite Image Understanding mode."""
+    st.markdown("### Temporal Satellite Image Understanding (Upload Pair)")
+    st.markdown(
+        """
+        Upload two satellite image observations of the same geographic area acquired at different dates ($T_1$ and $T_2$).
+        The automated system executes **two-stage geometric co-registration** (ORB keypoints + fine ECC), 
+        dynamic patch-based **transformer change detection** ($\\tau^* = 0.4500$), **connected-component region extraction**, 
+        **Visible Atmospherically Resistant Index (VARI)** optical greenness analysis, and **dual-stage vision-language explanation**.
+        """
+    )
+
+    # -------------------------------------------------------------------------
+    # 1. Balanced Image Upload Panels
+    # -------------------------------------------------------------------------
+    col_t1, col_t2 = st.columns(2)
+
+    with col_t1:
+        st.markdown("#### Observation T1 (Earlier Scene)")
+        uploaded_t1 = st.file_uploader(
+            "Upload Earlier Satellite Image (T1):",
+            type=["png", "jpg", "jpeg", "tif", "tiff"],
+            key="tu_uploader_t1",
+            help="Supported formats: PNG, JPG, JPEG, TIFF, TIF. File size limit: 25 MB.",
+        )
+        t1_bytes = None
+        pil_t1 = None
+        date_t1 = None
+        if uploaded_t1 is not None:
+            t1_bytes = uploaded_t1.getvalue()
+            try:
+                pil_t1 = Image.open(io.BytesIO(t1_bytes)).convert("RGB")
+                st.image(pil_t1, caption=f"T1 Preview: {uploaded_t1.name}", width="stretch")
+                st.markdown(
+                    f"""
+                    <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-radius: 6px; padding: 0.5rem 0.8rem; margin: 0.5rem 0; font-size: 0.82rem; color: #3E3B39;">
+                        <strong>Filename:</strong> {uploaded_t1.name}<br>
+                        <strong>Dimensions:</strong> {pil_t1.width} &times; {pil_t1.height} px<br>
+                        <strong>File Size:</strong> {len(t1_bytes) / 1024:.1f} KB ({len(t1_bytes) / (1024*1024):.2f} MB)
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            except Exception as e:
+                st.error(f"Invalid image file for T1: {e}")
+                uploaded_t1 = None
+
+            date_t1 = st.text_input(
+                "Observation Date / Timestamp T1 (optional):",
+                placeholder="e.g. 2021-04-15 or April 2021",
+                key="tu_date_t1_input",
+            )
+        else:
+            st.info("Upload Observation T1 (Earlier). Formats: PNG, JPG, JPEG, TIFF. Max: 25 MB.")
+
+    with col_t2:
+        st.markdown("#### Observation T2 (Later Scene)")
+        uploaded_t2 = st.file_uploader(
+            "Upload Later Satellite Image (T2):",
+            type=["png", "jpg", "jpeg", "tif", "tiff"],
+            key="tu_uploader_t2",
+            help="Supported formats: PNG, JPG, JPEG, TIFF, TIF. File size limit: 25 MB.",
+        )
+        t2_bytes = None
+        pil_t2 = None
+        date_t2 = None
+        if uploaded_t2 is not None:
+            t2_bytes = uploaded_t2.getvalue()
+            try:
+                pil_t2 = Image.open(io.BytesIO(t2_bytes)).convert("RGB")
+                st.image(pil_t2, caption=f"T2 Preview: {uploaded_t2.name}", width="stretch")
+                st.markdown(
+                    f"""
+                    <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-radius: 6px; padding: 0.5rem 0.8rem; margin: 0.5rem 0; font-size: 0.82rem; color: #3E3B39;">
+                        <strong>Filename:</strong> {uploaded_t2.name}<br>
+                        <strong>Dimensions:</strong> {pil_t2.width} &times; {pil_t2.height} px<br>
+                        <strong>File Size:</strong> {len(t2_bytes) / 1024:.1f} KB ({len(t2_bytes) / (1024*1024):.2f} MB)
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            except Exception as e:
+                st.error(f"Invalid image file for T2: {e}")
+                uploaded_t2 = None
+
+            date_t2 = st.text_input(
+                "Observation Date / Timestamp T2 (optional):",
+                placeholder="e.g. 2023-09-20 or September 2023",
+                key="tu_date_t2_input",
+            )
+        else:
+            st.info("Upload Observation T2 (Later). Formats: PNG, JPG, JPEG, TIFF. Max: 25 MB.")
+
+    # -------------------------------------------------------------------------
+    # 2. Validation Diagnostics & Input Integrity
+    # -------------------------------------------------------------------------
+    has_both = (uploaded_t1 is not None and uploaded_t2 is not None and t1_bytes and t2_bytes)
+
+    if not uploaded_t1 and not uploaded_t2:
+        st.caption("Supported formats: PNG, JPG, JPEG, TIFF. Maximum file size: 25 MB per observation image.")
+    elif not uploaded_t1:
+        st.warning("⚠️ Observation T1 is missing. Please upload the earlier observation image to proceed.")
+    elif not uploaded_t2:
+        st.warning("⚠️ Observation T2 is missing. Please upload the later observation image to proceed.")
+    else:
+        # File size validation
+        if len(t1_bytes) > 25 * 1024 * 1024:
+            st.error(f"Observation T1 exceeds the 25 MB limit ({len(t1_bytes)/(1024*1024):.1f} MB). Please upload a smaller image.")
+            has_both = False
+        if len(t2_bytes) > 25 * 1024 * 1024:
+            st.error(f"Observation T2 exceeds the 25 MB limit ({len(t2_bytes)/(1024*1024):.1f} MB). Please upload a smaller image.")
+            has_both = False
+
+        # Identical observation check
+        if has_both:
+            hash_t1 = hashlib.sha256(t1_bytes).hexdigest()
+            hash_t2 = hashlib.sha256(t2_bytes).hexdigest()
+            if hash_t1 == hash_t2:
+                st.warning("⚠️ **Identical Observation Alert:** Uploaded images for T1 and T2 are bit-identical. Change detection between identical scenes will detect zero or near-zero change.")
+
+            # Geometric alignment caution
+            st.caption(
+                "ℹ️ **Geometric Alignment Note:** Matching image dimensions do not establish geographic or sub-pixel alignment. "
+                "The system will execute Stage 1 feature-based co-registration (ORB keypoints + fine ECC) to align T2 to T1 before inference."
+            )
+
+    # -------------------------------------------------------------------------
+    # 3. Optional Metadata and Analysis Configuration
+    # -------------------------------------------------------------------------
+    with st.expander("Analysis Configuration & Contextual Metadata", expanded=True):
+        col_cfg1, col_cfg2 = st.columns([1.5, 1.5])
+
+        with col_cfg1:
+            gsd_val = st.number_input(
+                "Ground Sampling Distance (GSD, meters per pixel, optional):",
+                min_value=0.0,
+                max_value=100.0,
+                value=0.0,
+                step=0.05,
+                format="%.2f",
+                help="Physical ground resolution in meters/pixel (e.g. 0.50 m/px for LEVIR-CD). Required for metric physical area (m²) calculations.",
+            )
+            st.caption(
+                "ℹ️ **Physical Area Policy:** GSD is optional. Metric physical area estimates (in m² or hectares) are computed and displayed only when valid GSD information is provided."
+            )
+
+            det_choices = [
+                "M9: BIT-CD (Bitemporal Transformer + Cross-Attention, 552k params)",
+                "M10: QAT-CD (Quality-Aware Gated Detection, Attenuates Quality Defects)",
+            ]
+            selected_det_label = st.selectbox(
+                "Change Detection Architecture:",
+                det_choices,
+                index=0,
+                help="Validated architectures for bi-temporal satellite change detection. Evaluated at frozen threshold tau* = 0.4500.",
+            )
+            det_model = "M10_QAT_CD" if "M10" in selected_det_label else "M9_BIT_CD"
+
+        with col_cfg2:
+            description_val = st.text_input(
+                "Contextual Scene Description (optional):",
+                placeholder="e.g. Urban expansion and building construction in coastal district",
+                help="Supplies high-level operational context to the dual-stage AI explanation synthesis engine.",
+            )
+
+            max_regions_val = st.slider(
+                "Maximum Significant Change Regions to Analyze:",
+                min_value=1,
+                max_value=20,
+                value=6,
+                step=1,
+                help="Specifies how many top-ranked spatial change clusters are extracted and evaluated semantically.",
+            )
+
+        render_frozen_threshold_notice(threshold_val=0.4500, detector_name=det_model)
+
+    # -------------------------------------------------------------------------
+    # 4. Action Button with Submission Guard
+    # -------------------------------------------------------------------------
+    col_btn, col_reset = st.columns([2, 1])
+    is_running = st.session_state.get("tu_running", False)
+
+    with col_btn:
+        btn_run = st.button(
+            "Execute Temporal Analysis",
+            type="primary",
+            disabled=is_running or not has_both,
+            help="Executes two-stage co-registration, transformer change detection, region extraction, and dual-stage AI explanation.",
+        )
+
+    with col_reset:
+        if st.session_state.get("tu_analysis_result") is not None:
+            if st.button("Clear Results", key="tu_clear_btn"):
+                st.session_state["tu_analysis_result"] = None
+                st.rerun()
+
+    if btn_run and has_both:
+        st.session_state["tu_running"] = True
+        with st.spinner("Executing two-stage registration, patch-based transformer inference, region extraction, and dual-stage AI understanding..."):
+            try:
+                res = temporal_understanding_service.analyze_pair(
+                    t1_bytes=t1_bytes,
+                    t2_bytes=t2_bytes,
+                    filename_t1=uploaded_t1.name,
+                    filename_t2=uploaded_t2.name,
+                    observation_date_t1=date_t1 if date_t1 and date_t1.strip() else None,
+                    observation_date_t2=date_t2 if date_t2 and date_t2.strip() else None,
+                    gsd_meters=float(gsd_val) if gsd_val > 0.0 else None,
+                    description=description_val if description_val and description_val.strip() else None,
+                    detector_model=det_model,
+                    max_regions=int(max_regions_val),
+                )
+                st.session_state["tu_analysis_result"] = res
+                st.session_state["tu_last_pil_t1"] = pil_t1
+                st.session_state["tu_last_pil_t2"] = pil_t2
+                st.session_state["tu_last_aligned_t2"] = getattr(temporal_understanding_service, "last_aligned_t2", pil_t2)
+            except Exception as exc:
+                st.error(f"Analysis failed: {str(exc)}")
+            finally:
+                st.session_state["tu_running"] = False
+        st.rerun()
+
+    # -------------------------------------------------------------------------
+    # 5. Results Presentation
+    # -------------------------------------------------------------------------
+    res = st.session_state.get("tu_analysis_result")
+    if not res:
+        return
+
+    st.markdown("---")
+    st.markdown("## Temporal Analysis Report")
+
+    status = res.get("status", "unknown")
+
+    # Registration Rejection Handling
+    if status == "registration_rejected":
+        st.error(
+            "⛔ **Registration Rejected:** The uploaded observation pair could not be reliably co-registered to meet geometric confidence standards. "
+            "Pipeline execution was halted safely to prevent spurious change artifacts."
+        )
+        if res.get("registration_diagnostics"):
+            render_registration_diagnostics_card(res["registration_diagnostics"])
+
+        if res.get("errors"):
+            st.info("**Rejection Reasons:** " + " ".join(res["errors"]))
+        st.warning("Please upload image pairs with overlapping coverage, similar ground resolution, and recognizable terrestrial landmarks.")
+        return
+
+    if status == "error":
+        st.error("⛔ **Pipeline Failure:** " + " ".join(res.get("errors", ["Unexpected analysis failure."])))
+        return
+
+    # Successful Pipeline Output
+    meta = res.get("detector_metadata", {})
+    reg_diag = res.get("registration_diagnostics", {})
+    regions = res.get("regions", [])
+    semantic_findings = res.get("semantic_findings", [])
+    explanation = res.get("temporal_explanation", {})
+    vari_items = res.get("vari_observations", [])
+    gsd_active = res.get("image_metadata", {}).get("gsd_meters_per_pixel") is not None
+
+    # SECTION A: ANALYSIS OVERVIEW
+    st.markdown("### A. Analysis Overview")
+    kpi_cols = st.columns(6 if gsd_active else 5)
+    with kpi_cols[0]:
+        render_metric_card("Analysis Status", "Success", delta="Aligned", delta_color="normal")
+    with kpi_cols[1]:
+        render_metric_card("Detector Model", meta.get("model_id", "M9_BIT_CD"), help_text=meta.get("model_display", ""))
+    with kpi_cols[2]:
+        render_metric_card("Changed Area (%)", f"{float(meta.get('total_changed_area_pct', 0.0)):.2f}%")
+    with kpi_cols[3]:
+        render_metric_card("Changed Pixels", f"{int(meta.get('total_changed_pixels', 0)):,}")
+    with kpi_cols[4]:
+        render_metric_card("Inference Latency", f"{float(meta.get('latency_ms', 0.0)):.1f} ms")
+    if gsd_active:
+        with kpi_cols[5]:
+            total_physical_sqm = sum(r.get("physical_area_sqm", 0.0) or 0.0 for r in regions)
+            render_metric_card("Physical Area (m²)", f"{total_physical_sqm:,.1f} m²", help_text=f"GSD: {gsd_val:.2f} m/px")
+
+    # SECTION B: REGISTRATION QUALITY
+    st.markdown("### B. Co-Registration Quality Diagnostics")
+    if reg_diag:
+        render_registration_diagnostics_card(reg_diag)
+
+    # SECTION C: IMAGE AND MASK VISUALIZATION
+    st.markdown("### C. Image & Spatial Change Visualizations")
+    mask_data_uri = res.get("change_mask", {}).get("mask_data_uri")
+    if mask_data_uri:
+        pred_mask = decode_mask_data_uri(mask_data_uri)
+    else:
+        pred_mask = np.zeros((res["image_metadata"]["height"], res["image_metadata"]["width"]), dtype=np.uint8)
+
+    img_t1_disp = st.session_state.get("tu_last_pil_t1")
+    img_t2_aligned_disp = st.session_state.get("tu_last_aligned_t2")
+    if img_t2_aligned_disp is None:
+        img_t2_aligned_disp = st.session_state.get("tu_last_pil_t2")
+
+    spatial_overlay = create_temporal_overlay(
+        image_rgb=img_t1_disp,
+        mask=pred_mask,
+        regions=regions,
+        alpha=0.35,
+    )
+
+    t1_cap = f"T1 Optical ({res['image_metadata']['width']}×{res['image_metadata']['height']})"
+    if date_t1:
+        t1_cap += f" · Date: {date_t1}"
+    t2_cap = f"T2 Registered ({res['image_metadata']['width']}×{res['image_metadata']['height']})"
+    if date_t2:
+        t2_cap += f" · Date: {date_t2}"
+
+    render_temporal_understanding_panel(
+        img_t1=img_t1_disp,
+        img_t2_aligned=img_t2_aligned_disp,
+        pred_mask=pred_mask,
+        spatial_overlay=spatial_overlay,
+        caption_t1=t1_cap,
+        caption_t2=t2_cap,
+        caption_mask=f"Binary Mask (tau*={meta.get('threshold_used', 0.4500):.4f})",
+        caption_overlay=f"Spatial Overlay ({len(regions)} regions)",
+    )
+
+    # SECTION D: DETECTED CHANGE REGIONS
+    st.markdown("### D. Detected Change Regions")
+    st.caption(
+        "Ranked spatial change clusters extracted via connected-component analysis with morphological cleaning. "
+        "Coordinates are specified in pixel coordinates with (0,0) top-left origin. "
+        "Bounding boxes represent spatial cluster extents, not exact building footprints or geographic parcel boundaries."
+    )
+
+    if regions:
+        findings_map = {f.get("region_id"): f for f in semantic_findings}
+        for r in regions:
+            rid = r.get("region_id")
+            finding = findings_map.get(rid, {})
+            cat = finding.get("change_category", "Uncertain")
+            bbox = r.get("bbox", [0, 0, 0, 0])
+            centroid = r.get("centroid", [0.0, 0.0])
+            px_area = r.get("pixel_area", 0)
+            area_pct = r.get("area_ratio", 0.0) * 100.0
+            phys_sqm = r.get("physical_area_sqm")
+
+            phys_label = f" · <strong>Physical Area:</strong> {phys_sqm:,.1f} m²" if phys_sqm is not None else ""
+            cat_color = "#C86B4D" if cat in ("New Construction", "Demolition") else ("#6B7A65" if "Vegetation" in cat else "#4A2E2B")
+
+            st.markdown(
+                f"""
+                <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 5px solid {cat_color}; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin-bottom: 0.8rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem;">
+                        <span style="font-weight: 700; color: #4A2E2B; font-size: 0.95rem;">
+                            Region #{rid}: <span style="color: {cat_color};">{cat}</span>
+                        </span>
+                        <span style="background: #FAF7F2; border: 1px solid #BFAF9E; color: #3E3B39; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            BBox: [{bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]}] ({r.get('bbox_width')} &times; {r.get('bbox_height')} px)
+                        </span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: #3E3B39; margin-bottom: 0.4rem;">
+                        <strong>Pixel Area:</strong> {px_area:,} px ({area_pct:.3f}% of scene) · 
+                        <strong>Centroid:</strong> ({centroid[0]:.1f}, {centroid[1]:.1f}){phys_label}
+                    </div>
+                    {f'<div style="font-size: 0.82rem; color: #2F3E32; margin-top: 0.3rem;"><em>Observation:</em> {finding.get("visual_observation")}</div>' if finding.get("visual_observation") else ''}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        st.info("No significant change regions exceeded the minimum morphological threshold.")
+
+    # SECTION E: VARI GREENNESS EVIDENCE
+    st.markdown("### E. Visible Atmospherically Resistant Index (VARI) Greenness Evidence")
+    render_vari_caveat_banner()
+
+    if vari_items:
+        vari_rows = []
+        for v in vari_items:
+            rid = v.get("region_id", "-")
+            status_v = v.get("status", "unknown")
+            t1_v = f"{float(v['t1_mean_vari']):.4f}" if v.get("t1_mean_vari") is not None else "N/A"
+            t2_v = f"{float(v['t2_mean_vari']):.4f}" if v.get("t2_mean_vari") is not None else "N/A"
+            delta_v = f"{float(v['delta_vari']):+.4f}" if v.get("delta_vari") is not None else "N/A"
+            interp = v.get("interpretation", "No interpretation available.")
+            vari_rows.append({
+                "Region": f"#{rid}" if rid != "-" else "Global",
+                "Status": status_v,
+                "T1 VARI": t1_v,
+                "T2 VARI": t2_v,
+                "Δ VARI": delta_v,
+                "Optical Interpretation": interp,
+            })
+        st.dataframe(pd.DataFrame(vari_rows), width="stretch", hide_index=True)
+    else:
+        st.caption("No regional VARI observations recorded for this scene.")
+
+    # SECTION F: MULTIMODAL SEMANTIC INTERPRETATIONS
+    st.markdown("### F. Multimodal Semantic Interpretations")
+    st.caption(
+        "Standardized 8-class remote sensing classification: New Construction, Demolition, Vegetation Increase, "
+        "Vegetation Decrease, Road Development, Water Body Change, Soil Clearing, Uncertain. "
+        "AI interpretations are evidence-linked hypotheses and do not constitute ground truth labels."
+    )
+
+    if semantic_findings:
+        for f in semantic_findings:
+            rid = f.get("region_id")
+            cat = f.get("change_category", "Uncertain")
+            obs = f.get("visual_observation", "")
+            evid = f.get("evidence_for_category", [])
+            alts = f.get("alternative_interpretations", [])
+            unc = f.get("uncertainty_reason")
+            review_flag = f.get("requires_human_review", True)
+
+            flag_badge = '<span style="background: rgba(200, 107, 77, 0.15); color: #C86B4D; border: 1px solid #C86B4D; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600;">Requires Human Review</span>' if review_flag else '<span style="background: rgba(107, 122, 101, 0.15); color: #2F3E32; border: 1px solid #6B7A65; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600;">Automated Confidence</span>'
+
+            with st.expander(f"Region #{rid}: {cat}", expanded=True):
+                st.markdown(f"**Status:** {flag_badge}", unsafe_allow_html=True)
+                st.markdown(f"**Visual Observation:** {obs}")
+                if evid:
+                    st.markdown("**Supporting Evidence:**")
+                    for e in evid:
+                        st.markdown(f"- {e}")
+                if alts:
+                    st.markdown("**Alternative Hypotheses:**")
+                    for a in alts:
+                        st.markdown(f"- {a}")
+                if unc:
+                    st.markdown(f"**Uncertainty Factor:** {unc}")
+    else:
+        st.info("Multimodal vision analysis unavailable or no significant regions detected.")
+
+    # SECTION G: DUAL-STAGE AI EXPLANATION REPORT
+    st.markdown("### G. AI Reasoning Explanation Report")
+    if explanation:
+        summary_text = explanation.get("overall_summary", "")
+        if summary_text:
+            st.markdown(
+                f"""
+                <div style="background: #FAF7F2; border-left: 5px solid #2F3E32; border: 1px solid #BFAF9E; padding: 0.95rem 1.2rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; color: #3E3B39; font-size: 0.92rem; line-height: 1.55;">
+                    <strong style="color: #4A2E2B; font-size: 1rem;">Executive Narrative Summary</strong><br>
+                    {summary_text}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        tab_evid, tab_lim, tab_unk, tab_rec = st.tabs([
+            "Supporting Evidence",
+            "Scientific Limitations",
+            "Unknown Variables",
+            "Analyst Recommendations",
+        ])
+
+        with tab_evid:
+            evid_list = explanation.get("detector_evidence", [])
+            if evid_list:
+                for ev in evid_list:
+                    st.markdown(f"- {ev}")
+            else:
+                st.caption("No explicit detector evidence items listed.")
+
+        with tab_lim:
+            lim_list = explanation.get("scientific_limitations", [])
+            if lim_list:
+                for lm in lim_list:
+                    st.markdown(f"- {lm}")
+            else:
+                st.caption("Standard computational and resolution limits apply.")
+
+        with tab_unk:
+            unk_list = explanation.get("unknown_variables", [])
+            if unk_list:
+                for uk in unk_list:
+                    st.markdown(f"- {uk}")
+            else:
+                st.caption("No unknown variables noted.")
+
+        with tab_rec:
+            rec_list = explanation.get("human_review_recommendations", [])
+            if rec_list:
+                for rc in rec_list:
+                    st.markdown(f"- {rc}")
+            else:
+                st.caption("No manual review actions specified.")
+    else:
+        st.info("AI explanation service unavailable. Deterministic detector results and registration diagnostics are preserved.")
+
+
 def render_change_detection_page():
     """Renders the Bi-Temporal Change Detection page."""
     render_header(
@@ -170,6 +677,23 @@ def render_change_detection_page():
     )
 
     render_hardware_constraint_badge()
+
+    # Workflow Mode Selection: Benchmark Mode vs Temporal Understanding Mode
+    selected_mode = st.radio(
+        "Workflow Mode:",
+        [
+            "Benchmark Evaluation Mode (Precomputed LEVIR-CD Test Pairs & Ground Truth)",
+            "Temporal Understanding Mode (Upload Arbitrary T1 & T2 Satellite Observations)",
+        ],
+        horizontal=True,
+        index=0,
+        help="Switch between historical reproducible benchmark evaluation on LEVIR-CD and interactive upload of bitemporal satellite scenes.",
+        key="cd_mode_selector",
+    )
+
+    if "Temporal Understanding" in selected_mode:
+        render_temporal_understanding_mode()
+        return
 
     extractor, detectors, frozen_thresholds = get_change_detection_detectors()
     m7_det, m7_tau, m7_meta = load_m7_detector()

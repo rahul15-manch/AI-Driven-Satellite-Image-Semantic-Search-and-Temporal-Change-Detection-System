@@ -156,3 +156,21 @@ export async function explainSearchResult(payload) {
   return handleResponse(resp);
 }
 
+/**
+ * Execute end-to-end temporal satellite image understanding on an uploaded image pair.
+ * Sends multipart/form-data with file_t1, file_t2, and optional metadata to POST /api/temporal/analyze.
+ * @param {FormData} formData
+ * @returns {Promise<Object>}
+ */
+export async function analyzeTemporalPair(formData) {
+  const resp = await fetch(`${API_BASE}/api/temporal/analyze`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json"
+    },
+    body: formData
+  });
+  return handleResponse(resp);
+}
+
+

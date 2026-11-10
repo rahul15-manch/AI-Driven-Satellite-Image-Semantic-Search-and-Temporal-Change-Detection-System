@@ -138,3 +138,117 @@ def render_change_detection_panel(
                 st.markdown("**Classification Error Overlay**")
                 overlay = create_error_overlay(pred_mask, gt_mask)
                 st.image(overlay, caption="Green=TP, Red=FP, Blue=FN, Dark=TN", use_container_width=True)
+
+
+def create_temporal_overlay(
+    image_rgb: np.ndarray | Image.Image,
+    mask: np.ndarray,
+    regions: Optional[List[Dict[str, Any]]] = None,
+    alpha: float = 0.35,
+) -> np.ndarray:
+    """Generates an academic spatial overlay combining change detection and region bounds.
+
+    - Changed area mask highlighted in Terracotta (#C86B4D, RGB: 200, 107, 77)
+    - Ranked discrete change regions outlined in Yellow Ochre (#E1A95F, RGB: 225, 169, 95)
+    - Region labels drawn with top-left origin coordinates.
+    """
+    import cv2
+
+    if isinstance(image_rgb, Image.Image):
+        base = np.array(image_rgb.convert("RGB"), dtype=np.uint8)
+    else:
+        base = np.ascontiguousarray(image_rgb, dtype=np.uint8)
+
+    h, w = base.shape[:2]
+    vis = base.copy()
+
+    # 1. Overlay change mask
+    m = (mask > 0)
+    if m.shape[:2] != (h, w):
+        m = cv2.resize(m.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST) > 0
+
+    if np.any(m):
+        color_mask = np.zeros_like(vis)
+        color_mask[m] = [200, 107, 77]  # Terracotta accent
+        vis = np.where(m[:, :, None], cv2.addWeighted(vis, 1.0 - alpha, color_mask, alpha, 0), vis)
+
+    # 2. Draw ranked region bounding boxes and badges
+    if regions:
+        for r in regions:
+            bbox = r.get("bbox") if isinstance(r, dict) else getattr(r, "bbox", None)
+            rid = r.get("region_id") if isinstance(r, dict) else getattr(r, "region_id", None)
+            cat = r.get("change_category") if isinstance(r, dict) else getattr(r, "change_category", None)
+            if not bbox or len(bbox) != 4:
+                continue
+
+            xmin, ymin, xmax, ymax = [int(v) for v in bbox]
+            xmin = max(0, min(w - 1, xmin))
+            xmax = max(0, min(w - 1, xmax))
+            ymin = max(0, min(h - 1, ymin))
+            ymax = max(0, min(h - 1, ymax))
+
+            if xmax <= xmin or ymax <= ymin:
+                continue
+
+            # Draw crisp bounding box
+            cv2.rectangle(vis, (xmin, ymin), (xmax, ymax), (225, 169, 95), 2)  # Yellow Ochre
+
+            # Label badge
+            label_text = f"#{rid}" if rid is not None else "Region"
+            if cat and cat != "Uncertain":
+                label_text += f": {cat}"
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.45
+            thickness = 1
+            (tw, th), baseline = cv2.getTextSize(label_text, font, font_scale, thickness)
+
+            badge_y1 = max(0, ymin - th - 6)
+            badge_y2 = ymin
+            badge_x2 = min(w, xmin + tw + 8)
+
+            cv2.rectangle(vis, (xmin, badge_y1), (badge_x2, badge_y2), (74, 46, 43), -1)  # Deep Bark
+            cv2.putText(
+                vis,
+                label_text,
+                (xmin + 4, ymin - 4),
+                font,
+                font_scale,
+                (241, 235, 228),  # Alabaster
+                thickness,
+                lineType=cv2.LINE_AA,
+            )
+
+    return vis
+
+
+def render_temporal_understanding_panel(
+    img_t1: Image.Image | np.ndarray,
+    img_t2_aligned: Image.Image | np.ndarray,
+    pred_mask: np.ndarray,
+    spatial_overlay: np.ndarray,
+    caption_t1: str = "T1 Optical Scene",
+    caption_t2: str = "T2 Registered Scene",
+    caption_mask: str = "Predicted Binary Mask",
+    caption_overlay: str = "Spatial Change Overlay",
+):
+    """Renders 4-way balanced visualization panel for temporal change understanding."""
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.markdown("**1. Observation T1**")
+        st.image(img_t1, caption=caption_t1, width="stretch")
+
+    with col2:
+        st.markdown("**2. Observation T2 (Aligned)**")
+        st.image(img_t2_aligned, caption=caption_t2, width="stretch")
+
+    with col3:
+        st.markdown("**3. Binary Change Mask**")
+        mask_disp = (pred_mask * 255).astype(np.uint8) if pred_mask.max() <= 1 else pred_mask.astype(np.uint8)
+        st.image(mask_disp, caption=caption_mask, width="stretch")
+
+    with col4:
+        st.markdown("**4. Spatial Overlay & Regions**")
+        st.image(spatial_overlay, caption=caption_overlay, width="stretch")
+

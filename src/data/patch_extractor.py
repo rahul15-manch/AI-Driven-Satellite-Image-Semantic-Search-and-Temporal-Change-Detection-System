@@ -271,48 +271,73 @@ class PatchExtractor:
     def reconstruct_image(
         self,
         patches: Union[List[np.ndarray], List[Tuple[np.ndarray, PatchMetadata]], List[Tuple[np.ndarray, Tuple[int, int]]]],
-        original_height: int = 1024,
-        original_width: int = 1024,
+        original_height: Optional[int] = None,
+        original_width: Optional[int] = None,
         dtype: Optional[np.dtype] = None,
     ) -> np.ndarray:
         """Reconstructs a full image/mask from extracted patches.
 
-        Supports both non-overlapping and overlapping patches (using count-averaging for overlaps).
+        Supports arbitrary processing image dimensions, both non-overlapping and
+        overlapping patches (using count-averaging for overlaps), and automatic dimension
+        inference from PatchMetadata when available.
 
         Args:
             patches: List of patch arrays (ordered by compute_patch_grid), or list of
                      (patch_array, PatchMetadata), or list of (patch_array, (x, y)).
-            original_height: Target image height in pixels (default 1024).
-            original_width: Target image width in pixels (default 1024).
+            original_height: Target image height in pixels. If None, inferred from PatchMetadata
+                             or defaults to 1024.
+            original_width: Target image width in pixels. If None, inferred from PatchMetadata
+                            or defaults to 1024.
             dtype: Optional target numpy dtype. If None, inferred from the first patch.
 
         Returns:
-            Reconstructed numpy array of shape (original_height, original_width) or
-            (original_height, original_width, channels).
+            Reconstructed numpy array of shape (target_height, target_width) or
+            (target_height, target_width, channels).
         """
         if len(patches) == 0:
             raise ValueError("Cannot reconstruct from an empty list of patches.")
 
         # Inspect first element to determine input format and patch dimensions
         first_elem = patches[0]
+        meta_h: Optional[int] = None
+        meta_w: Optional[int] = None
+
         if isinstance(first_elem, tuple):
             first_patch = first_elem[0]
+            if len(first_elem) > 1 and isinstance(first_elem[1], PatchMetadata):
+                meta_h = first_elem[1].original_height
+                meta_w = first_elem[1].original_width
         else:
             first_patch = first_elem
+
+        # Determine target dimensions
+        target_h = original_height if original_height is not None else (meta_h if meta_h is not None else 1024)
+        target_w = original_width if original_width is not None else (meta_w if meta_w is not None else 1024)
+
+        if target_h <= 0 or target_w <= 0:
+            raise ValueError(f"Image dimensions must be positive, got ({target_w}x{target_h}).")
 
         patch_ndim = first_patch.ndim
         channels = first_patch.shape[2] if patch_ndim == 3 else None
         target_dtype = dtype or first_patch.dtype
 
         if patch_ndim == 3:
-            reconstructed = np.zeros((original_height, original_width, channels), dtype=np.float64)
-            count_map = np.zeros((original_height, original_width, 1), dtype=np.float64)
+            reconstructed = np.zeros((target_h, target_w, channels), dtype=np.float64)
+            count_map = np.zeros((target_h, target_w, 1), dtype=np.float64)
         else:
-            reconstructed = np.zeros((original_height, original_width), dtype=np.float64)
-            count_map = np.zeros((original_height, original_width), dtype=np.float64)
+            reconstructed = np.zeros((target_h, target_w), dtype=np.float64)
+            count_map = np.zeros((target_h, target_w), dtype=np.float64)
 
         # Determine coordinates for each patch
-        grid_coords = self.compute_patch_grid(width=original_width, height=original_height)
+        grid_coords = self.compute_patch_grid(width=target_w, height=target_h)
+
+        # Validate patch count if raw patch arrays without location are provided
+        if not (isinstance(first_elem, tuple) and isinstance(first_elem[1], (PatchMetadata, tuple, list))):
+            if len(patches) != len(grid_coords):
+                raise ValueError(
+                    f"Patch count mismatch: received {len(patches)} patches, but grid requires "
+                    f"{len(grid_coords)} patches for dimensions ({target_w}x{target_h})."
+                )
 
         for i, item in enumerate(patches):
             if isinstance(item, tuple):
@@ -331,8 +356,8 @@ class PatchExtractor:
                 x, y = grid_coords[i]
 
             # Determine valid crop slice inside bounds
-            h_slice = min(self.patch_size, original_height - y)
-            w_slice = min(self.patch_size, original_width - x)
+            h_slice = min(self.patch_size, target_h - y)
+            w_slice = min(self.patch_size, target_w - x)
 
             if h_slice <= 0 or w_slice <= 0:
                 continue
@@ -352,6 +377,30 @@ class PatchExtractor:
             reconstructed[count_map.squeeze(-1) > 0] /= count_map[count_map > 0].reshape(-1, 1)
         else:
             reconstructed[nonzero] /= count_map[nonzero]
+
+        # Handle unvisited boundary edge pixels (e.g. drop mode remainder) by edge replication
+        if not np.all(nonzero):
+            valid_h = target_h
+            valid_w = target_w
+            if grid_coords:
+                last_x = max(c[0] for c in grid_coords)
+                last_y = max(c[1] for c in grid_coords)
+                valid_w = min(target_w, last_x + self.patch_size)
+                valid_h = min(target_h, last_y + self.patch_size)
+
+            # Replicate horizontal border if needed
+            if valid_w < target_w and valid_w > 0:
+                if patch_ndim == 3:
+                    reconstructed[:, valid_w:, :] = reconstructed[:, valid_w - 1 : valid_w, :]
+                else:
+                    reconstructed[:, valid_w:] = reconstructed[:, valid_w - 1 : valid_w]
+
+            # Replicate vertical border if needed
+            if valid_h < target_h and valid_h > 0:
+                if patch_ndim == 3:
+                    reconstructed[valid_h:, :, :] = reconstructed[valid_h - 1 : valid_h, :, :]
+                else:
+                    reconstructed[valid_h:, :] = reconstructed[valid_h - 1 : valid_h, :]
 
         if np.issubdtype(target_dtype, np.integer) or target_dtype == bool:
             return np.round(reconstructed).astype(target_dtype)

@@ -18,6 +18,9 @@ import numpy as np
 from PIL import Image
 import torch
 
+import logging
+import uuid
+
 from src.change_detection.base import BaseChangeDetector
 from src.change_detection.bit_cd import BITChangeDetector, load_checkpoint as load_m9_ckpt
 from src.change_detection.cva_detector import CVADetector
@@ -33,7 +36,20 @@ from src.semantic_search.bm25 import BM25Retriever
 from src.semantic_search.clip_model import CLIPRetriever
 from src.semantic_search.faiss_index import FAISSFlatIPIndex
 from src.semantic_search.prompt_ensembler import PromptEnsembler
+from src.temporal_understanding import (
+    ImageCoRegistrator,
+    RegistrationPolicy,
+    RegistrationStatus,
+    RegionExtractor,
+    RegionExtractionConfig,
+    SemanticChangeAnalyzer,
+    VisionAnalyzerConfig,
+    TemporalExplanationEngine,
+    TemporalExplanationConfig,
+)
 from utils.config_loader import get_project_root, load_m4_config, load_m11_config
+
+logger = logging.getLogger(__name__)
 
 ROOT = get_project_root()
 
@@ -692,4 +708,274 @@ retrieval_service = RetrievalService()
 change_detection_service = ChangeDetectionService()
 benchmark_service = BenchmarkService()
 from src.api.llm_service import llm_explanation_service, LLMExplanationService
+
+
+# ==============================================================================
+# PHASE 3C: TEMPORAL UNDERSTANDING SERVICE
+# ==============================================================================
+
+class TemporalUnderstandingService:
+    """Orchestrates end-to-end temporal satellite image understanding.
+
+    Full pipeline workflow:
+    1. Upload & Ingestion: In-memory byte streaming, safety validation, optical RGB normalization.
+    2. Phase 3A Co-Registration: ORB keypoint matching + fine ECC alignment with policy gating.
+    3. Change Detection: Dynamic patch-based inference with M9 BIT-CD / M10 QAT-CD.
+    4. Phase 3A Region Extraction: Connected-component analysis and Top-K ranking.
+    5. Phase 3B Optical VARI: Visible Atmospherically Resistant Index greenness delta.
+    6. Phase 3B Multimodal Vision: Groq Qwen 3.8 Multimodal analysis over 8-class taxonomy.
+    7. Phase 3B Explanation Synthesis: Groq Qwen 27B academic report synthesis.
+    """
+
+    def __init__(
+        self,
+        change_detector_service: Optional[ChangeDetectionService] = None,
+        max_upload_size: int = 25 * 1024 * 1024,  # 25 MB
+        max_dimension: int = 4096,
+    ):
+        self.cd_service = change_detector_service or change_detection_service
+        self.registrator = ImageCoRegistrator(RegistrationPolicy(allow_multichannel_tiff=True))
+        self.extractor = PatchExtractor(patch_size=256, stride=256, padding_mode="pad")
+        self.max_upload_size = max_upload_size
+        self.max_dimension = max_dimension
+        self.vision_analyzer = SemanticChangeAnalyzer(VisionAnalyzerConfig())
+        self.explanation_engine = TemporalExplanationEngine(TemporalExplanationConfig())
+
+    def validate_and_decode_upload(
+        self,
+        file_bytes: bytes,
+        filename: Optional[str] = None,
+        name: str = "T1",
+    ) -> np.ndarray:
+        """Validates upload size, extension, decompression safety, and converts to optical RGB uint8 array."""
+        if not file_bytes or len(file_bytes) == 0:
+            raise ValueError(f"Uploaded file {name} is empty.")
+
+        if len(file_bytes) > self.max_upload_size:
+            raise ValueError(
+                f"Uploaded file {name} exceeds maximum allowed size ({self.max_upload_size / (1024*1024):.1f} MB)."
+            )
+
+        if filename:
+            clean_fn = Path(filename).name.lower()
+            suffix = Path(clean_fn).suffix
+            allowed_suffixes = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
+            if suffix not in allowed_suffixes:
+                raise ValueError(
+                    f"Unsupported image file extension '{suffix}' for {name}. Allowed formats: PNG, JPEG, TIFF."
+                )
+
+        # Decompression bomb safety check
+        Image.MAX_IMAGE_PIXELS = 50_000_000
+
+        try:
+            arr = self.registrator.load_and_validate_image(file_bytes, name=name)
+        except Exception as e:
+            raise ValueError(f"Failed to decode or validate optical image {name}: {str(e)}")
+
+        # Ensure 3-channel optical RGB
+        if arr.ndim == 2:
+            arr = np.stack([arr, arr, arr], axis=-1)
+        elif arr.ndim == 3 and arr.shape[2] > 3:
+            arr = arr[:, :, :3]
+
+        h, w = arr.shape[:2]
+        if h > self.max_dimension or w > self.max_dimension:
+            raise ValueError(
+                f"{name} image dimension ({w}x{h}) exceeds maximum supported limit {self.max_dimension}x{self.max_dimension}."
+            )
+
+        return arr
+
+    def analyze_pair(
+        self,
+        t1_bytes: bytes,
+        t2_bytes: bytes,
+        filename_t1: Optional[str] = None,
+        filename_t2: Optional[str] = None,
+        observation_date_t1: Optional[str] = None,
+        observation_date_t2: Optional[str] = None,
+        gsd_meters: Optional[float] = None,
+        description: Optional[str] = None,
+        detector_model: str = "M9_BIT_CD",
+        max_regions: int = 6,
+    ) -> Dict[str, Any]:
+        """Executes full end-to-end temporal understanding analysis."""
+        req_id = f"temp_{uuid.uuid4().hex[:12]}"
+
+        # 1. Decode and validate uploads
+        img_t1 = self.validate_and_decode_upload(t1_bytes, filename=filename_t1, name="T1")
+        img_t2 = self.validate_and_decode_upload(t2_bytes, filename=filename_t2, name="T2")
+
+        image_metadata = {
+            "width": int(img_t1.shape[1]),
+            "height": int(img_t1.shape[0]),
+            "channels": 3,
+            "observation_date_t1": observation_date_t1,
+            "observation_date_t2": observation_date_t2,
+            "gsd_meters_per_pixel": float(gsd_meters) if gsd_meters is not None and gsd_meters > 0 else None,
+            "description": description,
+        }
+
+        # 2. Image Co-Registration
+        reg_result = self.registrator.register_pair(img_t1, img_t2)
+        diag = reg_result.diagnostics
+
+        if diag.registration_status == RegistrationStatus.REJECTED or reg_result.aligned_t2 is None:
+            logger.warning("Co-registration rejected for request %s (confidence: %.3f)", req_id, diag.confidence_score)
+            return {
+                "request_id": req_id,
+                "status": "registration_rejected",
+                "image_metadata": image_metadata,
+                "registration_diagnostics": diag.to_dict(),
+                "detector_metadata": None,
+                "change_mask": None,
+                "regions": [],
+                "vari_observations": None,
+                "semantic_findings": [],
+                "temporal_explanation": None,
+                "warnings": diag.warnings + ["Image pair alignment failed quality policy; registration was rejected."],
+                "errors": ["Registration quality rejected: insufficient inliers or excessive reprojection error."],
+            }
+
+        img_t1_aligned = img_t1
+        img_t2_aligned = reg_result.aligned_t2
+        self.last_aligned_t1 = img_t1_aligned
+        self.last_aligned_t2 = img_t2_aligned
+        h_aligned, w_aligned = img_t1_aligned.shape[:2]
+
+        image_metadata["width"] = w_aligned
+        image_metadata["height"] = h_aligned
+
+        # 3. Change Detection Inference
+        valid_model = detector_model.strip() if detector_model in ("M9_BIT_CD", "M10_QAT_CD") else "M9_BIT_CD"
+        detector, tau = self.cd_service.get_detector(valid_model)
+
+        t_det0 = time.perf_counter()
+        patches = self.extractor.extract_from_pair(img_t1_aligned, img_t2_aligned, parent_stem=req_id)
+        diff_patches = []
+        for p_a, p_b, _, p_meta in patches:
+            if valid_model == "M10_QAT_CD":
+                d_p = detector.base_detector.compute_difference_map(p_a, p_b)
+            else:
+                d_p = detector.compute_difference_map(p_a, p_b)
+            diff_patches.append((d_p, p_meta))
+
+        base_diff = self.extractor.reconstruct_image(
+            diff_patches,
+            original_height=h_aligned,
+            original_width=w_aligned,
+            dtype=np.float32,
+        )
+
+        qat_metrics: Optional[Dict[str, Any]] = None
+        if valid_model == "M10_QAT_CD":
+            diag_qat = detector.compute_quality_diagnostics(img_t1_aligned, img_t2_aligned, base_prob=base_diff)
+            full_diff = diag_qat["gated_prob"]
+            qat_metrics = {
+                "gamma_attenuation": detector.gamma,
+                "mean_registration_discrepancy": round(float(diag_qat["reg_map"].mean()), 4),
+                "mean_illumination_gradient": round(float(diag_qat["illum_map"].mean()), 4),
+                "mean_sharpness_asymmetry": round(float(diag_qat["sharp_map"].mean()), 4),
+                "mean_margin_uncertainty": round(float(diag_qat["uncertainty_map"].mean()), 4),
+            }
+        else:
+            full_diff = base_diff
+
+        pred_mask = (full_diff >= tau).astype(np.uint8)
+        det_latency_ms = (time.perf_counter() - t_det0) * 1000.0
+
+        ch_pixels = int(np.count_nonzero(pred_mask > 0))
+        ch_pct = round(float(ch_pixels / (h_aligned * w_aligned) * 100.0), 4)
+
+        mask_data_uri = array_to_png_data_uri(pred_mask, is_mask=True)
+        mask_rep = {
+            "format": "png_data_uri",
+            "mask_data_uri": mask_data_uri,
+            "width": w_aligned,
+            "height": h_aligned,
+            "total_changed_pixels": ch_pixels,
+            "coordinate_frame": "top_left_origin_pixels",
+        }
+
+        detector_meta = {
+            "model_id": valid_model,
+            "model_display": self.cd_service.model_displays.get(valid_model, valid_model),
+            "threshold_used": round(float(tau), 4),
+            "total_changed_pixels": ch_pixels,
+            "total_changed_area_pct": ch_pct,
+            "latency_ms": round(det_latency_ms, 2),
+            "qat_diagnostics": qat_metrics,
+        }
+
+        # 4. Region Extraction
+        extractor = RegionExtractor(RegionExtractionConfig(max_regions=max_regions))
+        region_result = extractor.extract_regions(
+            binary_mask=pred_mask,
+            probability_map=full_diff,
+            gsd_meters=gsd_meters if gsd_meters and gsd_meters > 0 else None,
+        )
+
+        region_items = []
+        for r in region_result.regions:
+            region_items.append({
+                "region_id": r.region_id,
+                "bbox": list(r.bbox),
+                "context_bbox": list(r.context_bbox),
+                "pixel_area": r.pixel_area,
+                "raw_pixel_area": r.raw_pixel_area,
+                "area_ratio": round(float(r.area_ratio), 6),
+                "centroid": [round(float(r.centroid[0]), 2), round(float(r.centroid[1]), 2)],
+                "bbox_width": r.bbox_width,
+                "bbox_height": r.bbox_height,
+                "mean_probability": round(float(r.mean_probability), 4) if r.mean_probability is not None else None,
+                "physical_area_sqm": (
+                    round(float(r.physical_area_sq_meters), 2)
+                    if r.physical_area_sq_meters is not None
+                    else None
+                ),
+            })
+
+        # 5. Semantic Analysis (VARI & Multimodal Vision)
+        semantic_findings_raw = self.vision_analyzer.analyze_regions(
+            t1_image=img_t1_aligned,
+            t2_image=img_t2_aligned,
+            regions=region_result.regions,
+            binary_mask=region_result.cleaned_mask,
+        )
+
+        semantic_findings_list = [f.to_dict() for f in semantic_findings_raw]
+        vari_obs = [f.vari_evidence.to_dict() for f in semantic_findings_raw if f.vari_evidence]
+
+        # 6. Explanation Synthesis
+        report = self.explanation_engine.generate_explanation(
+            detector_telemetry=detector_meta,
+            regions=region_result.regions,
+            semantic_findings=semantic_findings_raw,
+            registration_diagnostics=diag,
+            metadata={
+                "gsd_meters": gsd_meters if gsd_meters and gsd_meters > 0 else None,
+                "observation_date_t1": observation_date_t1,
+                "observation_date_t2": observation_date_t2,
+                "description": description,
+            },
+        )
+
+        return {
+            "request_id": req_id,
+            "status": "success",
+            "image_metadata": image_metadata,
+            "registration_diagnostics": diag.to_dict(),
+            "detector_metadata": detector_meta,
+            "change_mask": mask_rep,
+            "regions": region_items,
+            "vari_observations": vari_obs if vari_obs else None,
+            "semantic_findings": semantic_findings_list,
+            "temporal_explanation": report.to_dict(),
+            "warnings": diag.warnings,
+            "errors": [],
+        }
+
+
+temporal_understanding_service = TemporalUnderstandingService()
 

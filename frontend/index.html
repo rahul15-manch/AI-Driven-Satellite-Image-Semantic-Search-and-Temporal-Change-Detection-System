@@ -148,8 +148,24 @@
         <p class="panel-desc">Evaluate land-cover and building surface changes between temporal pairs ($T_1 \rightarrow T_2$). Compare classical radiometric differences with Siamese CNNs, dense attention networks, and transformers.</p>
       </div>
 
-      <div class="change-controls-card">
-        <form id="change-form" class="change-form">
+      <!-- Workflow Mode Selector Pill Group -->
+      <div class="mode-selector-container">
+        <div class="mode-pill-group" role="tablist" aria-label="Change Detection Workflow Mode">
+          <button type="button" class="mode-pill-btn active" id="mode-btn-benchmark" role="tab" aria-selected="true" data-cd-mode="benchmark">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            Benchmark Evaluation Mode (LEVIR-CD)
+          </button>
+          <button type="button" class="mode-pill-btn" id="mode-btn-temporal" role="tab" aria-selected="false" data-cd-mode="temporal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Temporal Understanding Mode (Upload T1 &amp; T2)
+          </button>
+        </div>
+      </div>
+
+      <!-- BENCHMARK WORKFLOW CONTAINER -->
+      <div id="cd-benchmark-container" class="cd-workflow-container">
+        <div class="change-controls-card">
+          <form id="change-form" class="change-form">
           <div class="change-options-grid change-detection-config">
             <div class="option-field">
               <label for="change-pair-select">LEVIR-CD Test Scene Pair</label>
@@ -307,12 +323,287 @@
           </div>
         </div>
 
-        <!-- AI Explainability Action Bar -->
-        <div class="change-explain-action-bar" id="change-explain-action-bar">
-          <button type="button" class="btn-explain-large" id="btn-explain-change">
-            <span class="explain-icon">💡</span> Explain This Prediction (Qwen 27B)
-          </button>
-          <div class="change-explanation-slot" id="change-explanation-slot"></div>
+          <!-- AI Explainability Action Bar -->
+          <div class="change-explain-action-bar" id="change-explain-action-bar">
+            <button type="button" class="btn-explain-large" id="btn-explain-change">
+              <span class="explain-icon">💡</span> Explain This Prediction (Qwen 27B)
+            </button>
+            <div class="change-explanation-slot" id="change-explanation-slot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEMPORAL UNDERSTANDING WORKFLOW (Upload T1 & T2) -->
+      <div id="cd-temporal-container" class="cd-workflow-container" style="display: none;">
+        <div class="change-controls-card">
+          <form id="temporal-form" class="temporal-form">
+            <!-- Balanced Image Upload Panels -->
+            <div class="upload-panels-grid">
+              <!-- Observation T1 -->
+              <div class="upload-panel" id="panel-upload-t1">
+                <div class="panel-subhead">
+                  <span class="badge badge-primary">T1</span>
+                  <h3>Observation T1 (Earlier Scene)</h3>
+                </div>
+                <div class="dropzone" id="dropzone-t1">
+                  <input type="file" id="tu-file-t1" accept=".png,.jpg,.jpeg,.tif,.tiff" class="file-input-hidden" required>
+                  <label for="tu-file-t1" class="dropzone-label">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span class="dropzone-text">Click or drop image for T1</span>
+                    <span class="dropzone-hint">PNG, JPG, TIFF up to 25 MB</span>
+                  </label>
+                  <div class="upload-preview-container" id="preview-container-t1" style="display: none;">
+                    <img id="tu-preview-img-t1" alt="T1 Preview" src="" loading="lazy">
+                    <div class="upload-meta-pill" id="tu-meta-t1"></div>
+                  </div>
+                </div>
+                <div class="option-field date-field">
+                  <label for="tu-date-t1">Observation Date T1 (Optional)</label>
+                  <input type="text" id="tu-date-t1" placeholder="e.g. 2021-04-15 or April 2021">
+                </div>
+              </div>
+
+              <!-- Observation T2 -->
+              <div class="upload-panel" id="panel-upload-t2">
+                <div class="panel-subhead">
+                  <span class="badge badge-accent">T2</span>
+                  <h3>Observation T2 (Later Scene)</h3>
+                </div>
+                <div class="dropzone" id="dropzone-t2">
+                  <input type="file" id="tu-file-t2" accept=".png,.jpg,.jpeg,.tif,.tiff" class="file-input-hidden" required>
+                  <label for="tu-file-t2" class="dropzone-label">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span class="dropzone-text">Click or drop image for T2</span>
+                    <span class="dropzone-hint">PNG, JPG, TIFF up to 25 MB</span>
+                  </label>
+                  <div class="upload-preview-container" id="preview-container-t2" style="display: none;">
+                    <img id="tu-preview-img-t2" alt="T2 Preview" src="" loading="lazy">
+                    <div class="upload-meta-pill" id="tu-meta-t2"></div>
+                  </div>
+                </div>
+                <div class="option-field date-field">
+                  <label for="tu-date-t2">Observation Date T2 (Optional)</label>
+                  <input type="text" id="tu-date-t2" placeholder="e.g. 2023-09-20 or September 2023">
+                </div>
+              </div>
+            </div>
+
+            <!-- Geometric Alignment Notice -->
+            <div class="alignment-caption-notice">
+              <span>ℹ️</span> <strong>Geometric Alignment Notice:</strong> Identical pixel dimensions do not guarantee spatial or sub-pixel alignment. Two-stage feature co-registration (ORB + ECC) is executed automatically before inference.
+            </div>
+
+            <!-- Expandable Analysis Configuration -->
+            <details class="config-accordion" open>
+              <summary class="config-summary">
+                <span>⚙️</span> Analysis Configuration &amp; Contextual Metadata
+              </summary>
+              <div class="config-accordion-body">
+                <div class="config-options-grid">
+                  <div class="option-field">
+                    <label for="tu-gsd-input">Ground Sampling Distance (GSD, m/px, optional)</label>
+                    <input type="number" id="tu-gsd-input" step="0.05" min="0.0" max="100.0" placeholder="e.g. 0.50 (LEVIR-CD standard)">
+                    <span class="field-hint">Physical area (m²) is calculated and displayed only when valid GSD is provided.</span>
+                  </div>
+
+                  <div class="option-field">
+                    <label for="tu-model-select">Detection Model Architecture</label>
+                    <select id="tu-model-select">
+                      <option value="M9_BIT_CD" selected>M9 BIT-CD (Bitemporal Transformer, 552k params)</option>
+                      <option value="M10_QAT_CD">M10 QAT-CD (Quality-Aware Gated Detection)</option>
+                    </select>
+                    <span class="field-hint">Evaluated with frozen threshold &tau;* = 0.4500.</span>
+                  </div>
+
+                  <div class="option-field">
+                    <label for="tu-max-regions-input">Max Significant Regions (1–20)</label>
+                    <input type="number" id="tu-max-regions-input" min="1" max="20" value="6">
+                    <span class="field-hint">Maximum ranked spatial change clusters to analyze.</span>
+                  </div>
+
+                  <div class="option-field full-width">
+                    <label for="tu-desc-input">Contextual Scene Description (Optional)</label>
+                    <input type="text" id="tu-desc-input" placeholder="e.g. Suburban residential expansion or commercial dockyard change monitoring">
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <!-- Submission Row -->
+            <div class="temporal-action-row">
+              <button type="submit" id="tu-submit-btn" class="primary-btn">
+                <span class="btn-text">Execute Temporal Analysis</span>
+                <span class="btn-spinner hidden"></span>
+              </button>
+              <button type="button" id="tu-reset-btn" class="secondary-btn">Reset Inputs</button>
+            </div>
+            <div id="tu-validation-msg" class="validation-msg hidden"></div>
+          </form>
+        </div>
+
+        <!-- Temporal Results Stage -->
+        <div id="tu-results-stage" class="temporal-results-stage" style="display: none;">
+          <!-- Registration Rejection Alert -->
+          <div id="tu-rejection-banner" class="alert-banner alert-danger hidden">
+            <div class="alert-content">
+              <h4>⛔ Registration Rejected</h4>
+              <p id="tu-rejection-text">Observation images could not be reliably co-registered to meet geometric confidence standards. Processing halted safely.</p>
+            </div>
+          </div>
+
+          <!-- Section A: Overview Metrics Ribbon -->
+          <div class="viewer-meta-ribbon" id="tu-overview-ribbon">
+            <div class="ribbon-item"><span class="ribbon-label">Status:</span> <strong id="tu-meta-status">Aligned</strong></div>
+            <div class="ribbon-item"><span class="ribbon-label">Detector:</span> <strong id="tu-meta-model">M9 BIT-CD (&tau;*=0.45)</strong></div>
+            <div class="ribbon-item"><span class="ribbon-label">Changed Area:</span> <strong id="tu-meta-changed-pct">0.00%</strong></div>
+            <div class="ribbon-item"><span class="ribbon-label">Pixels:</span> <strong id="tu-meta-changed-px">0 px</strong></div>
+            <div class="ribbon-item"><span class="ribbon-label">Latency:</span> <strong id="tu-meta-latency">0 ms</strong></div>
+            <div class="ribbon-item" id="tu-meta-physical-slot" style="display: none;"><span class="ribbon-label">Physical Area:</span> <strong id="tu-meta-physical-area">0 m²</strong></div>
+          </div>
+
+          <!-- Section B: Registration Quality Card -->
+          <div class="table-card" id="tu-reg-diagnostics-card">
+            <div class="table-card-header">
+              <h3>Stage 1 Geometric Co-Registration Quality Diagnostics</h3>
+              <span class="badge" id="tu-reg-status-badge">Aligned</span>
+            </div>
+            <div class="reg-metrics-grid" id="tu-reg-metrics-grid">
+              <!-- Injected by JS -->
+            </div>
+            <div id="tu-reg-warnings-box" class="reg-warnings-box" style="display: none;"></div>
+          </div>
+
+          <!-- Section C: 4-Way Image Viewer Grid -->
+          <div class="quad-viewer-grid" id="tu-quad-grid">
+            <div class="quad-card visualization-card">
+              <div class="quad-header">
+                <h3>1. Observation T1 (Earlier)</h3>
+                <span class="badge">Optical RGB</span>
+              </div>
+              <div class="quad-body">
+                <img id="tu-view-t1" alt="Observation T1" src="" loading="lazy">
+              </div>
+            </div>
+
+            <div class="quad-card visualization-card">
+              <div class="quad-header">
+                <h3>2. Observation T2 (Aligned)</h3>
+                <span class="badge badge-accent">Geometric Aligned</span>
+              </div>
+              <div class="quad-body">
+                <img id="tu-view-t2" alt="Observation T2 Aligned" src="" loading="lazy">
+              </div>
+            </div>
+
+            <div class="quad-card visualization-card">
+              <div class="quad-header">
+                <h3>3. Binary Change Mask</h3>
+                <span class="badge badge-success">&ge; &tau;* (0.4500)</span>
+              </div>
+              <div class="quad-body">
+                <img id="tu-view-mask" alt="Binary Change Mask" src="" loading="lazy">
+              </div>
+            </div>
+
+            <div class="quad-card visualization-card">
+              <div class="quad-header">
+                <h3>4. Spatial Change Overlay</h3>
+                <span class="badge badge-primary">Ranked Regions</span>
+              </div>
+              <div class="quad-body">
+                <img id="tu-view-overlay" alt="Spatial Change Overlay" src="" loading="lazy">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: Detected Change Regions Grid -->
+          <div class="table-card" id="tu-regions-section">
+            <div class="table-card-header">
+              <h3>D. Detected Spatial Change Regions (Top-Ranked Clusters)</h3>
+              <span class="badge badge-accent">Pixel Coordinates (0,0 Top-Left)</span>
+            </div>
+            <p class="section-caveat-text">Bounding boxes indicate spatial cluster bounds, not exact building footprints or geographic parcel boundaries.</p>
+            <div class="regions-cards-grid" id="tu-regions-cards-container">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+
+          <!-- Section E: VARI Greenness Evidence -->
+          <div class="table-card" id="tu-vari-section">
+            <div class="table-card-header">
+              <h3>E. Visible Atmospherically Resistant Index (VARI) Greenness Evidence</h3>
+              <span class="badge">Optical Greenness Proxy</span>
+            </div>
+            <div class="vari-caveat-banner">
+              <strong>Scientific Measurement Caveat:</strong>
+              <em>"VARI is an RGB-derived visible greenness indicator. It is not NDVI and does not independently establish vegetation change."</em>
+            </div>
+            <div class="table-responsive">
+              <table class="benchmark-table" id="tu-vari-table">
+                <thead>
+                  <tr>
+                    <th>Region</th>
+                    <th>Status</th>
+                    <th>T1 VARI</th>
+                    <th>T2 VARI</th>
+                    <th>&Delta; VARI</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody id="tu-vari-table-body">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section F: Multimodal Semantic Interpretations -->
+          <div class="table-card" id="tu-semantic-section">
+            <div class="table-card-header">
+              <h3>F. Multimodal Semantic Interpretations (8-Class Remote Sensing Taxonomy)</h3>
+              <span class="badge badge-primary">Multimodal Vision Hypotheses</span>
+            </div>
+            <p class="section-caveat-text">Evaluated across standard categories: New Construction, Demolition, Vegetation Increase, Vegetation Decrease, Road Development, Water Body Change, Soil Clearing, Uncertain. Interpretations are evidence-linked hypotheses and do not constitute ground truth labels.</p>
+            <div class="semantic-findings-list" id="tu-semantic-findings-container">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+
+          <!-- Section G: Dual-Stage AI Reasoning Report -->
+          <div class="explanation-card" id="tu-explanation-section">
+            <div class="explanation-card-header">
+              <div class="explanation-title">
+                <span>💡</span> G. Dual-Stage AI Reasoning &amp; Explanation Report
+              </div>
+              <div class="explanation-badges">
+                <span class="badge-source-model">Architecture: Dual-Stage Reasoning</span>
+                <span class="badge-qwen-model">Explainer: Groq Qwen</span>
+              </div>
+            </div>
+            <div class="explanation-card-body">
+              <div class="explanation-summary-box" id="tu-exp-summary">
+                <!-- Injected by JS -->
+              </div>
+              <div class="explanation-details-grid">
+                <div class="explanation-detail-col col-evidence">
+                  <h5><span>✓</span> Detector Evidence</h5>
+                  <ul id="tu-exp-evidence"></ul>
+                </div>
+                <div class="explanation-detail-col col-limitations">
+                  <h5><span>⚠</span> Scientific Limitations</h5>
+                  <ul id="tu-exp-limitations"></ul>
+                </div>
+                <div class="explanation-detail-col col-unknowns">
+                  <h5><span>?</span> Unknown Variables</h5>
+                  <ul id="tu-exp-unknowns"></ul>
+                </div>
+                <div class="explanation-detail-col col-recommendations">
+                  <h5><span>📋</span> Analyst Recommendations</h5>
+                  <ul id="tu-exp-recommendations"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import re
 from pathlib import Path
 from typing import List, Optional
 import numpy as np
 from PIL import Image
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
+
+logger = logging.getLogger(__name__)
 
 from src.api.schemas import (
     HealthResponse,
@@ -25,12 +28,14 @@ from src.api.schemas import (
     ExplainChangeDetectionRequest,
     ExplainSearchRequest,
     ExplanationResponse,
+    TemporalAnalysisResponse,
 )
 from src.api.service import (
     retrieval_service,
     change_detection_service,
     benchmark_service,
     llm_explanation_service,
+    temporal_understanding_service,
     ROOT,
 )
 
@@ -297,6 +302,78 @@ def explain_semantic_search_result(request: ExplainSearchRequest) -> Explanation
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected failure during explanation generation.",
+        )
+
+
+# ==============================================================================
+# PHASE 3C: TEMPORAL UNDERSTANDING ENDPOINTS
+# ==============================================================================
+
+@router.post("/temporal/analyze", response_model=TemporalAnalysisResponse)
+async def analyze_temporal_pair(
+    file_t1: UploadFile = File(..., description="Earlier observation optical satellite image (T1)"),
+    file_t2: UploadFile = File(..., description="Later observation optical satellite image (T2)"),
+    observation_date_t1: Optional[str] = Form(None, description="Observation timestamp/date for T1"),
+    observation_date_t2: Optional[str] = Form(None, description="Observation timestamp/date for T2"),
+    gsd_meters_per_pixel: Optional[float] = Form(None, description="Ground Sample Distance in meters per pixel"),
+    gsd: Optional[float] = Form(None, description="Alias for gsd_meters_per_pixel"),
+    description: Optional[str] = Form(None, description="Optional scene or mission description"),
+    detector_model: str = Form("M9_BIT_CD", description="Detector model identifier (M9_BIT_CD or M10_QAT_CD)"),
+    max_regions: int = Form(6, ge=1, le=20, description="Maximum number of significant change regions to analyze"),
+) -> TemporalAnalysisResponse:
+    """Executes full end-to-end temporal satellite image understanding.
+
+    Integrates:
+    - Pre-upload validation & optical RGB normalization
+    - Phase 3A Two-Stage Co-Registration (ORB + ECC) with policy gating
+    - Dynamic patch-based Change Detection (M9 BIT-CD / M10 QAT-CD)
+    - Phase 3A Morphological Region Extraction & Ranking
+    - Phase 3B Optical VARI greenness proxy analysis
+    - Phase 3B Groq Qwen 3.8 Multimodal semantic change classification
+    - Phase 3B Groq Qwen 27B dual-stage explanation synthesis
+    """
+    # 1. Read files into memory with request-scoped cleanup
+    try:
+        t1_bytes = await file_t1.read()
+        t2_bytes = await file_t2.read()
+    finally:
+        await file_t1.close()
+        await file_t2.close()
+
+    # 2. Determine GSD value
+    gsd_val = gsd_meters_per_pixel if gsd_meters_per_pixel is not None else gsd
+
+    # 3. Execute analysis pipeline
+    try:
+        result = temporal_understanding_service.analyze_pair(
+            t1_bytes=t1_bytes,
+            t2_bytes=t2_bytes,
+            filename_t1=file_t1.filename,
+            filename_t2=file_t2.filename,
+            observation_date_t1=observation_date_t1,
+            observation_date_t2=observation_date_t2,
+            gsd_meters=gsd_val,
+            description=description,
+            detector_model=detector_model,
+            max_regions=max_regions,
+        )
+        return TemporalAnalysisResponse(**result)
+
+    except ValueError as e:
+        msg = str(e)
+        if "empty" in msg.lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+        elif "exceeds maximum allowed size" in msg.lower():
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=msg)
+        elif "unsupported image file extension" in msg.lower():
+            raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+
+    except Exception as e:
+        logger.exception("Unexpected error in /api/temporal/analyze: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected failure during temporal satellite analysis: {str(e)}",
         )
 
 

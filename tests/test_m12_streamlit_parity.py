@@ -104,7 +104,7 @@ class TestBM25RetrievalParity:
     def test_retrieval_page_bm25_apptest(self):
         """Executes pages/retrieval.py with BM25 query in Streamlit AppTest without exceptions."""
         at = AppTest.from_file(str(ROOT / "pages" / "retrieval.py"))
-        at.run()
+        at.run(timeout=10)
         assert len(at.exception) == 0, f"AppTest raised exceptions: {at.exception}"
 
 

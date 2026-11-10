@@ -109,3 +109,59 @@ def render_metric_card(
     """Renders a structured metric card with clean styling."""
     formatted_val = f"{value:.4f}" if isinstance(value, float) else str(value)
     st.metric(label=label, value=formatted_val, delta=delta, delta_color=delta_color, help=help_text)
+
+
+def render_vari_caveat_banner():
+    """Renders the mandatory scientific disclaimer regarding Visible Atmospherically Resistant Index (VARI)."""
+    st.markdown(
+        """
+        <div style="background: #E3DAC9; border: 1px solid #BFAF9E; border-left: 4px solid #6B7A65; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; margin: 0.85rem 0; font-size: 0.85rem; color: #3E3B39;">
+            <strong style="color: #2F3E32;">Scientific Measurement Caveat:</strong>
+            <em>"VARI is an RGB-derived visible greenness indicator. It is not NDVI and does not independently establish vegetation change."</em>
+            Computed as $(G - R) / (G + R - B)$ from optical RGB channels; sensitive to canopy chlorosis, illumination angle, and seasonal foliage phenology, but lacks near-infrared (NIR) cellular scattering sensitivity.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_registration_diagnostics_card(diagnostics: Dict[str, Any]):
+    """Renders two-stage co-registration telemetry and quality status."""
+    status = diagnostics.get("registration_status", "unknown")
+    is_rejected = status == "rejected"
+    border_color = "#C86B4D" if is_rejected else "#6B7A65"
+    badge_bg = "rgba(200, 107, 77, 0.15)" if is_rejected else "rgba(107, 122, 101, 0.15)"
+    badge_color = "#C86B4D" if is_rejected else "#2F3E32"
+    badge_text = "REGISTRATION REJECTED" if is_rejected else f"ALIGNED ({diagnostics.get('transformation_type', 'homography').upper()})"
+
+    ecc_val = diagnostics.get("ecc_correlation")
+    ecc_str = f"{float(ecc_val):.4f}" if ecc_val is not None else "N/A"
+
+    st.markdown(
+        f"""
+        <div style="background: #FAF7F2; border: 1px solid #BFAF9E; border-left: 5px solid {border_color}; border-radius: 0 8px 8px 0; padding: 0.9rem 1.1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <span style="font-weight: 700; color: #4A2E2B; font-size: 0.95rem;">
+                    Stage 1 Co-Registration Quality Diagnostics
+                </span>
+                <span style="background: {badge_bg}; color: {badge_color}; border: 1px solid {border_color}; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px;">
+                    {badge_text}
+                </span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-top: 0.6rem;">
+                <div><span style="color: #8A7E72; font-size: 0.75rem;">Match Count:</span><br><strong style="color: #3E3B39;">{diagnostics.get('match_count', 0)}</strong></div>
+                <div><span style="color: #8A7E72; font-size: 0.75rem;">Inlier Ratio:</span><br><strong style="color: #3E3B39;">{float(diagnostics.get('inlier_ratio', 0.0))*100:.1f}%</strong> ({diagnostics.get('inlier_count', 0)} pts)</div>
+                <div><span style="color: #8A7E72; font-size: 0.75rem;">Reproj. Error:</span><br><strong style="color: #3E3B39;">{float(diagnostics.get('reprojection_error', 0.0)):.2f} px</strong></div>
+                <div><span style="color: #8A7E72; font-size: 0.75rem;">ECC Correlation:</span><br><strong style="color: #3E3B39;">{ecc_str}</strong></div>
+                <div><span style="color: #8A7E72; font-size: 0.75rem;">Confidence Score:</span><br><strong style="color: #3E3B39;">{float(diagnostics.get('confidence_score', 0.0))*100:.1f}%</strong></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    warnings = diagnostics.get("warnings", [])
+    if warnings:
+        for w in warnings:
+            st.warning(f"⚠️ **Registration Warning:** {w}")
+

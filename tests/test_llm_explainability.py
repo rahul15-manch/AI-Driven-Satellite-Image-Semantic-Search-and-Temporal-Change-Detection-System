@@ -288,6 +288,8 @@ def test_live_authenticated_groq_qwen_smoke(client):
         "captions": ["dense single family residential homes with green trees and lawns"],
     }
     explain_resp = client.post("/api/explain/semantic-search", json=search_payload)
+    if explain_resp.status_code == 429:
+        pytest.skip("Groq on-demand rate limit exceeded during live smoke test.")
     assert explain_resp.status_code == 200
     explain_data = explain_resp.json()
     assert explain_data["provider"] == "Groq"

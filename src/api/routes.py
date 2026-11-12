@@ -39,7 +39,7 @@ from src.api.service import (
     ROOT,
 )
 
-router = APIRouter(prefix="/api", tags=["API"])
+router = APIRouter(tags=["API"])
 
 
 @router.get("/health", response_model=HealthResponse)

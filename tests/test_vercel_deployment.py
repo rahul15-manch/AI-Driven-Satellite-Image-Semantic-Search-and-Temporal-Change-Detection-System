@@ -22,10 +22,8 @@ def test_vercel_json_structure():
     sources = [r.get("source") for r in rewrites]
 
     assert "/api/(.*)" in sources, "API rewrite rule must be defined"
-    assert "/css/(.*)" in sources, "CSS static asset rewrite must be defined"
-    assert "/js/(.*)" in sources, "JavaScript static asset rewrite must be defined"
-    assert "/vendor/(.*)" in sources, "Vendor static asset rewrite must be defined"
-    assert "/(.*)" in sources, "Catch-all frontend rewrite must be defined"
+    assert (ROOT / "public" / "index.html").exists(), "public/index.html must exist for edge static hosting"
+    assert (ROOT / "public" / "css" / "styles.css").exists(), "public/css/styles.css must exist"
 
     # Function configuration
     assert "functions" in config

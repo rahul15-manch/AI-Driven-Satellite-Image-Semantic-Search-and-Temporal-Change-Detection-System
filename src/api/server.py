@@ -46,8 +46,9 @@ def create_app() -> FastAPI:
             },
         )
 
-    # 3. Include API Router
-    app.include_router(api_router)
+    # 3. Include API Router (dual-mounted at /api and root for serverless compatibility)
+    app.include_router(api_router, prefix="/api")
+    app.include_router(api_router, prefix="")
 
     # 4. Mount Frontend Static Files if directory exists
     frontend_dir = ROOT / "frontend"

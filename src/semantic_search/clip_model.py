@@ -108,6 +108,11 @@ class CLIPRetriever:
 
             with torch.no_grad():
                 features = self.model.get_image_features(**inputs)
+                if not isinstance(features, torch.Tensor):
+                    if hasattr(features, "image_embeds") and features.image_embeds is not None:
+                        features = features.image_embeds
+                    elif hasattr(features, "pooler_output") and features.pooler_output is not None:
+                        features = features.pooler_output
                 # L2 normalize
                 features = features / torch.norm(features, p=2, dim=-1, keepdim=True)
                 all_embeddings.append(features.cpu().numpy().astype(np.float32))
@@ -148,6 +153,13 @@ class CLIPRetriever:
 
             with torch.no_grad():
                 features = self.model.get_text_features(**inputs)
+                if not isinstance(features, torch.Tensor):
+                    if hasattr(features, "text_embeds") and features.text_embeds is not None:
+                        features = features.text_embeds
+                    elif hasattr(features, "pooler_output") and features.pooler_output is not None:
+                        features = features.pooler_output
+                    elif hasattr(features, "last_hidden_state") and features.last_hidden_state is not None:
+                        features = features.last_hidden_state[:, 0, :]
                 # L2 normalize
                 features = features / torch.norm(features, p=2, dim=-1, keepdim=True)
                 all_embeddings.append(features.cpu().numpy().astype(np.float32))

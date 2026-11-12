@@ -11,7 +11,11 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
-import skimage.filters
+
+try:
+    import skimage.filters
+except Exception:
+    skimage = None
 
 
 @dataclass
@@ -175,9 +179,27 @@ class ValidationThresholdOptimizer:
         h_256, edges_256 = np.histogram(self.bin_centers, bins=256, weights=combined_hist, range=(0.0, 1.0))
         centers_256 = (edges_256[:-1] + edges_256[1:]) / 2.0
 
-        try:
-            otsu_val = float(skimage.filters.threshold_otsu(hist=(h_256, centers_256)))
-        except Exception:
+        otsu_val = None
+        if skimage is not None and hasattr(skimage, "filters"):
+            try:
+                otsu_val = float(skimage.filters.threshold_otsu(hist=(h_256, centers_256)))
+            except Exception:
+                otsu_val = None
+
+        if otsu_val is None:
+            try:
+                total = np.sum(h_256)
+                if total > 0:
+                    prob = h_256 / total
+                    cum_sum = np.cumsum(prob)
+                    cum_mean = np.cumsum(prob * centers_256)
+                    global_mean = cum_mean[-1]
+                    var = ((global_mean * cum_sum - cum_mean) ** 2) / (cum_sum * (1.0 - cum_sum) + 1e-12)
+                    otsu_val = float(centers_256[np.argmax(var)])
+            except Exception:
+                pass
+
+        if otsu_val is None:
             # Fallback to mean if histogram is degenerate
             otsu_val = float(np.average(self.bin_centers, weights=combined_hist))
 

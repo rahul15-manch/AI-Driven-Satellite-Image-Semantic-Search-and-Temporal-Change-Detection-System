@@ -14,7 +14,49 @@ from __future__ import annotations
 
 from typing import Optional
 import numpy as np
-from skimage.metrics import structural_similarity as ssim
+try:
+    from skimage.metrics import structural_similarity as ssim
+except Exception:
+    from scipy.ndimage import gaussian_filter
+
+    def ssim(
+        im1: np.ndarray,
+        im2: np.ndarray,
+        win_size: int = 11,
+        sigma: float = 1.5,
+        data_range: float = 1.0,
+        gaussian_weights: bool = True,
+        full: bool = True,
+        channel_axis: Optional[int] = None,
+    ):
+        if channel_axis is not None:
+            maps = []
+            for ch in range(im1.shape[channel_axis]):
+                if channel_axis == 2:
+                    sub1, sub2 = im1[:, :, ch], im2[:, :, ch]
+                else:
+                    sub1, sub2 = im1[ch], im2[ch]
+                _, m = ssim(sub1, sub2, win_size=win_size, sigma=sigma, data_range=data_range, full=True)
+                maps.append(m)
+            ssim_map = np.stack(maps, axis=channel_axis)
+            return float(np.mean(ssim_map)), ssim_map
+
+        C1 = (0.01 * data_range) ** 2
+        C2 = (0.03 * data_range) ** 2
+        truncate = ((win_size - 1) / 2) / sigma
+
+        ux = gaussian_filter(im1, sigma, mode="reflect", truncate=truncate)
+        uy = gaussian_filter(im2, sigma, mode="reflect", truncate=truncate)
+        uxx = gaussian_filter(im1 * im1, sigma, mode="reflect", truncate=truncate)
+        uyy = gaussian_filter(im2 * im2, sigma, mode="reflect", truncate=truncate)
+        uxy = gaussian_filter(im1 * im2, sigma, mode="reflect", truncate=truncate)
+
+        vx = uxx - ux * ux
+        vy = uyy - uy * uy
+        vxy = uxy - ux * uy
+
+        ssim_map = ((2 * ux * uy + C1) * (2 * vxy + C2)) / ((ux**2 + uy**2 + C1) * (vx + vy + C2))
+        return float(np.mean(ssim_map)), ssim_map
 
 from src.change_detection.base import BaseChangeDetector
 

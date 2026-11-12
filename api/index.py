@@ -40,6 +40,36 @@ try:
 except Exception as e:
     startup_error = traceback.format_exc()
 
+if app is not None and startup_error is None:
+    from fastapi import Request
+    from fastapi.responses import JSONResponse
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    @app.api_route("/debug", methods=["GET", "POST"])
+    @app.api_route("/api/debug", methods=["GET", "POST"])
+    def debug_route(request: Request):
+        return JSONResponse(
+            content={
+                "url_path": request.url.path,
+                "scope_path": request.scope.get("path"),
+                "available_routes": [r.path for r in request.app.routes if hasattr(r, "path")],
+            }
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 404:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": "RouteNotFound",
+                    "requested_url_path": request.url.path,
+                    "scope_path": request.scope.get("path"),
+                    "available_routes": [r.path for r in request.app.routes if hasattr(r, "path")],
+                },
+            )
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 if app is None or startup_error is not None:
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse

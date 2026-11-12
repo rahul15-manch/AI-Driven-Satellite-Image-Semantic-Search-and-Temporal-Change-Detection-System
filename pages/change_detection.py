@@ -673,7 +673,7 @@ def render_change_detection_page():
     render_header(
         title="Bi-Temporal Change Detection",
         subtitle="Classical Baselines, FC-Siam-diff, SNUNet-CD, BIT-CD & Quality-Aware QAT-CD on LEVIR-CD (1024×1024 Pairs, 0.5m GSD)",
-        badge_text="Milestones 5, 7, 8, 9 & 10 Verified",
+        badge_text="Milestones 5, 7, 8, 9, 10, 11 & 13 Verified",
     )
 
     render_hardware_constraint_badge()
@@ -969,21 +969,21 @@ def render_change_detection_page():
                 st.image(
                     diag["s_reg"],
                     caption=f"Registration Discrepancy S_reg (Mean: {diag['s_reg'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
             with q_c2:
                 st.image(
                     diag["s_illum"],
                     caption=f"Illumination Discrepancy S_illum (Mean: {diag['s_illum'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
             with q_c3:
                 st.image(
                     diag["s_sharp"],
                     caption=f"Sharpness Discrepancy S_sharp (Mean: {diag['s_sharp'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
 
@@ -992,21 +992,21 @@ def render_change_detection_page():
                 st.image(
                     diag["defect_index"],
                     caption=f"Composite Defect Risk Q (Mean: {diag['defect_index'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
             with q_c5:
                 st.image(
                     diag["uncertainty"],
                     caption=f"Margin Uncertainty U_det (Mean: {diag['uncertainty'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
             with q_c6:
                 st.image(
                     diag["base_prob"],
                     caption=f"Prior Base Probability P0 (Mean: {diag['base_prob'].mean():.4f})",
-                    use_container_width=True,
+                    width="stretch",
                     clamp=True,
                 )
 
@@ -1073,7 +1073,7 @@ def render_change_detection_page():
                 "Peak RAM (MB)",
             ]
             valid_cols = [c for c in cols_to_show if c in disp_df.columns]
-            st.dataframe(disp_df[valid_cols], use_container_width=True, hide_index=True)
+            st.dataframe(disp_df[valid_cols], hide_index=True)
 
             st.pyplot(plot_m5_detector_comparison(disp_df))
         else:
@@ -1101,7 +1101,7 @@ def render_change_detection_page():
                         })
             if ci_rows:
                 df_ci = pd.DataFrame(ci_rows)
-                st.dataframe(df_ci, use_container_width=True, hide_index=True)
+                st.dataframe(df_ci, hide_index=True)
             else:
                 st.warning("Bootstrap confidence interval records are empty.")
         else:
@@ -1130,7 +1130,7 @@ def render_change_detection_page():
                 })
             if p_rows:
                 df_p = pd.DataFrame(p_rows)
-                st.dataframe(df_p, use_container_width=True, hide_index=True)
+                st.dataframe(df_p, hide_index=True)
             else:
                 st.warning("Paired test records are empty.")
         else:
@@ -1160,7 +1160,7 @@ def render_change_detection_page():
                     "Benefit Ratio (FP/TP)": f"{float(cdata.get('operational_benefit_ratio', 0.0)):.2f}x",
                 })
             df_abl = pd.DataFrame(abl_rows)
-            st.dataframe(df_abl, use_container_width=True, hide_index=True)
+            st.dataframe(df_abl, hide_index=True)
 
             interp = abl_dict.get("operational_interpretation", "")
             if interp:
@@ -1195,6 +1195,12 @@ def render_change_detection_page():
             )
         else:
             st.warning("Publication figures not found in experiments/figures/m11/.")
+
+        st.info(
+            "📈 **Milestone 13 Master Pareto Frontier & Controlled Ablations Available:** "
+            "Navigate to the **Master Integration & Ablations (M13)** page to inspect the complete 8-model Pareto frontier, "
+            "QAT-CD analytical gating waterfall, validation gamma sensitivity curves, and scene-level statistical tests."
+        )
 
         # Preserved M5 Historical Figures Expander
         with st.expander("Historical Milestone 5 Precomputed Figures (Threshold Curves & Baselines)", expanded=False):

@@ -171,7 +171,7 @@ def render_retrieval_page():
     with col_btn:
         st.write("")
         st.write("")
-        search_clicked = st.button("Search Gallery", type="primary", use_container_width=True)
+        search_clicked = st.button("Search Gallery", type="primary", width="stretch")
 
     if search_clicked or query_input:
         if not query_input.strip():
@@ -284,8 +284,12 @@ def render_retrieval_page():
                 "Mean Latency (ms)",
                 "Peak RAM (MB)",
             ]],
-            use_container_width=True,
             hide_index=True,
+        )
+
+        st.info(
+            "💡 **Milestone 13 Protocol Audit Available:** Navigate to the **Master Integration & Ablations (M13)** page "
+            "to inspect the full cross-modal ablation matrix, multi-caption leakage investigation, and formal scope discrepancy disclosures."
         )
 
         # Charts

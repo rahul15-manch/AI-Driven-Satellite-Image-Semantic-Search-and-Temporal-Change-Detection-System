@@ -131,11 +131,11 @@ def render_dataset_page():
             if p_t1.exists() and p_t2.exists() and p_gt.exists():
                 c_a, c_b, c_gt = st.columns(3)
                 with c_a:
-                    st.image(Image.open(p_t1), caption=f"{sample_choice} - T1 (Pre-Change)", use_container_width=True)
+                    st.image(Image.open(p_t1), caption=f"{sample_choice} - T1 (Pre-Change)", width="stretch")
                 with c_b:
-                    st.image(Image.open(p_t2), caption=f"{sample_choice} - T2 (Post-Change)", use_container_width=True)
+                    st.image(Image.open(p_t2), caption=f"{sample_choice} - T2 (Post-Change)", width="stretch")
                 with c_gt:
-                    st.image(Image.open(p_gt), caption=f"{sample_choice} - Ground Truth Mask", use_container_width=True)
+                    st.image(Image.open(p_gt), caption=f"{sample_choice} - Ground Truth Mask", width="stretch")
             else:
                 st.warning(f"Images for {sample_choice} are incomplete on disk.")
         else:

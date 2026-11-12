@@ -190,6 +190,7 @@ def plot_m6_f1_vs_severity(m6_df: pd.DataFrame, perturbation_name: str) -> Optio
 def display_research_figure(figure_path: Path, caption: Optional[str] = None):
     """Displays a static precomputed research figure from experiments/figures/."""
     if figure_path and figure_path.exists():
-        st.image(str(figure_path), caption=caption or figure_path.name, use_container_width=True)
+        st.image(str(figure_path), caption=caption or figure_path.name)
     else:
         st.warning(f"Research figure not found at path: {figure_path}")
+

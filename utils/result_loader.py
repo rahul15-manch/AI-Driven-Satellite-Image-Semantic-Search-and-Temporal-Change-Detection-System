@@ -301,3 +301,75 @@ def get_m11_figures() -> Dict[str, Path]:
     return {f.stem: f for f in sorted(m11_dir.glob("*.png"))}
 
 
+# =============================================================================
+# MILESTONE 13: MASTER INTEGRATION, ABLATION STUDY & REPRODUCIBILITY
+# =============================================================================
+
+def load_m13_retrieval_ablation() -> Tuple[Optional[pd.DataFrame], Optional[Dict[str, Any]]]:
+    """Loads Milestone 13 cross-modal retrieval ablation study and leakage protocol analysis."""
+    json_path = ROOT / "experiments" / "results" / "m13" / "semantic_retrieval_ablation.json"
+    csv_path = ROOT / "experiments" / "results" / "m13" / "semantic_retrieval_ablation.csv"
+    doc: Optional[Dict[str, Any]] = None
+    df: Optional[pd.DataFrame] = None
+
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            doc = json.load(f)
+            if "records" in doc:
+                df = pd.DataFrame(doc["records"])
+    elif csv_path.exists():
+        df = pd.read_csv(csv_path)
+
+    return df, doc
+
+
+def load_m13_cd_comparison() -> Optional[pd.DataFrame]:
+    """Loads Milestone 13 unified change detection comparative evaluation across all 8 configurations."""
+    json_path = ROOT / "experiments" / "results" / "m13" / "change_detection_comparison.json"
+    csv_path = ROOT / "experiments" / "results" / "m13" / "change_detection_comparison.csv"
+
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return pd.DataFrame(data)
+    elif csv_path.exists():
+        return pd.read_csv(csv_path)
+    return None
+
+
+def load_m13_qat_ablation() -> Tuple[Optional[pd.DataFrame], Optional[Dict[str, Any]]]:
+    """Loads Milestone 13 controlled QAT-CD quality gating ablation matrix and operational ratios."""
+    json_path = ROOT / "experiments" / "results" / "m13" / "qat_cd_controlled_ablation.json"
+    csv_path = ROOT / "experiments" / "results" / "m13" / "qat_cd_controlled_ablation.csv"
+    doc: Optional[Dict[str, Any]] = None
+    df: Optional[pd.DataFrame] = None
+
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            doc = json.load(f)
+            if "ablation_conditions" in doc:
+                df = pd.DataFrame(doc["ablation_conditions"])
+    elif csv_path.exists():
+        df = pd.read_csv(csv_path)
+
+    return df, doc
+
+
+def load_m13_statistical_significance() -> Optional[Dict[str, Any]]:
+    """Loads Milestone 13 scene-level paired hypothesis tests and bootstrap confidence intervals."""
+    path = ROOT / "experiments" / "results" / "m13" / "statistical_significance_m13.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get_m13_figures() -> Dict[str, Path]:
+    """Returns mapping of available M13 high-resolution publication figure files."""
+    m13_dir = ROOT / "experiments" / "figures" / "m13"
+    if not m13_dir.exists():
+        return {}
+    return {f.stem: f for f in sorted(m13_dir.glob("*.png"))}
+
+
+

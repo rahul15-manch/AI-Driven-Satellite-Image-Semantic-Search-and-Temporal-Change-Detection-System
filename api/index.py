@@ -32,7 +32,10 @@ app = None
 startup_error = None
 
 try:
-    from src.api.app import app as _app
+    try:
+        from src.api.server import app as _app
+    except ImportError:
+        from src.api.app import app as _app
     app = _app
 except Exception as e:
     startup_error = traceback.format_exc()

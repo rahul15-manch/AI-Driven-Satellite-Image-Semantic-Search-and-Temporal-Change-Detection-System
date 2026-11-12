@@ -16,7 +16,7 @@ def render_overview_page():
     render_header(
         title="AI-Driven Satellite Image Semantic Search & Temporal Change Detection",
         subtitle="Empirical Investigation of Vision-Language Cross-Modal Retrieval and Classical & Learned Bi-Temporal Change Detection",
-        badge_text="Milestones M1–M12 Verified",
+        badge_text="Milestones M1–M13 Verified",
     )
 
     render_milestone_status_bar()
@@ -187,13 +187,14 @@ def render_overview_page():
     with col_b:
         st.markdown(
             """
-            **Learned Models, Quality Gating & Evaluation (M7–M12):**
+            **Learned Models, Quality Gating & Evaluation (M7–M13):**
             - **M7:** Learned Siamese U-Net (FC-Siam-diff) with frozen validation thresholding.
             - **M8:** Advanced Dense Siamese Network (SNUNet-CD) with ECAM channel attention on CPU.
             - **M9:** Attention-based Bitemporal Image Transformer (BIT-CD) with cross-attention token fusion.
             - **M10:** Quality-Aware Temporal Change Detection (QAT-CD) with registration, illumination, and blur gating.
             - **M11:** Standardized comparative evaluation, bootstrap confidence intervals, paired hypothesis tests, and ablation analysis.
             - **M12:** FastAPI backend and dual-interface frontend parity (Streamlit dashboard & Web UI).
+            - **M13:** Master system integration, controlled ablation studies, statistical significance analysis & publication figure synthesis.
             """
         )
 

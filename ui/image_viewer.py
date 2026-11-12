@@ -76,7 +76,7 @@ def render_retrieval_card_grid(results: List[Dict[str, Any]], cols_per_row: int 
 
                 if img_path.exists():
                     img = Image.open(img_path)
-                    st.image(img, use_container_width=True)
+                    st.image(img, width="stretch")
                 else:
                     st.warning(f"Image not found: {img_path.name}")
 
@@ -106,21 +106,21 @@ def render_change_detection_panel(
 
     with col1:
         st.markdown("**1. T1 Pre-Change**")
-        st.image(img_t1, caption="T1 Optical (LEVIR-CD)", use_container_width=True)
+        st.image(img_t1, caption="T1 Optical (LEVIR-CD)", width="stretch")
 
     with col2:
         st.markdown("**2. T2 Post-Change**")
-        st.image(img_t2, caption="T2 Optical (LEVIR-CD)", use_container_width=True)
+        st.image(img_t2, caption="T2 Optical (LEVIR-CD)", width="stretch")
 
     with col3:
         st.markdown("**3. Ground Truth**")
         gt_disp = (gt_mask * 255).astype(np.uint8) if gt_mask.max() <= 1 else gt_mask.astype(np.uint8)
-        st.image(gt_disp, caption=f"Ground Truth ({np.mean(gt_mask > 0)*100:.2f}% changed)", use_container_width=True)
+        st.image(gt_disp, caption=f"Ground Truth ({np.mean(gt_mask > 0)*100:.2f}% changed)", width="stretch")
 
     with col4:
         st.markdown("**4. Predicted Map**")
         pred_disp = (pred_mask * 255).astype(np.uint8) if pred_mask.max() <= 1 else pred_mask.astype(np.uint8)
-        st.image(pred_disp, caption=f"Prediction ({np.mean(pred_mask > 0)*100:.2f}% changed)", use_container_width=True)
+        st.image(pred_disp, caption=f"Prediction ({np.mean(pred_mask > 0)*100:.2f}% changed)", width="stretch")
 
     # Optional detailed diagnostics
     if diff_map is not None or show_error_overlay:
@@ -131,13 +131,13 @@ def render_change_detection_panel(
                 st.markdown("**Continuous Difference Score Map**")
                 # Normalize difference map to 0-255 for display
                 d_norm = ((diff_map - diff_map.min()) / (diff_map.max() - diff_map.min() + 1e-8) * 255).astype(np.uint8)
-                st.image(d_norm, caption="Continuous Difference Map (0.0 to 1.0)", use_container_width=True)
+                st.image(d_norm, caption="Continuous Difference Map (0.0 to 1.0)", width="stretch")
 
         if show_error_overlay:
             with diag_cols[1]:
                 st.markdown("**Classification Error Overlay**")
                 overlay = create_error_overlay(pred_mask, gt_mask)
-                st.image(overlay, caption="Green=TP, Red=FP, Blue=FN, Dark=TN", use_container_width=True)
+                st.image(overlay, caption="Green=TP, Red=FP, Blue=FN, Dark=TN", width="stretch")
 
 
 def create_temporal_overlay(

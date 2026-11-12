@@ -12,7 +12,7 @@ import streamlit as st
 
 # Configure page metadata
 st.set_page_config(
-    page_title="Satellite AI — Research Dashboard (M1–M12)",
+    page_title="Satellite AI — Research Dashboard (M1–M13)",
     page_icon="🛰️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -24,6 +24,7 @@ from pages.dataset import render_dataset_page
 from pages.retrieval import render_retrieval_page
 from pages.change_detection import render_change_detection_page
 from pages.false_alarm import render_false_alarm_page
+from pages.ablation_m13 import render_m13_ablation_page
 
 
 # =============================================================================
@@ -89,6 +90,7 @@ pages_nav = {
         st.Page(render_retrieval_page, title="Semantic Retrieval", icon="🔍"),
         st.Page(render_change_detection_page, title="Change Detection", icon="🛰️"),
         st.Page(render_false_alarm_page, title="False-Alarm Analysis", icon="📊"),
+        st.Page(render_m13_ablation_page, title="Master Integration & Ablations (M13)", icon="📈"),
     ]
 }
 

@@ -45,6 +45,16 @@ if app is not None and startup_error is None:
     from fastapi.responses import JSONResponse
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
+    @app.middleware("http")
+    async def vercel_path_rewrite_middleware(request: Request, call_next):
+        # In Vercel serverless environments, internal rewrites often rewrite the path to /api/index.py.
+        # Vercel provides the original matched path in the 'x-matched-path' header.
+        original_path = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-uri")
+        if original_path and request.url.path in ("/api/index", "/api/index.py", "/api", "/api/"):
+            clean_path = original_path.split("?")[0]
+            request.scope["path"] = clean_path
+        return await call_next(request)
+
     @app.api_route("/debug", methods=["GET", "POST"])
     @app.api_route("/api/debug", methods=["GET", "POST"])
     @app.api_route("/api/index", methods=["GET", "POST"])

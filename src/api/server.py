@@ -50,10 +50,11 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix="/api")
     app.include_router(api_router, prefix="")
 
-    # 4. Mount Frontend Static Files if directory exists
+    # 4. Mount Frontend Static Files if directory exists (standalone local dev only)
+    import os
     frontend_dir = ROOT / "frontend"
-    if frontend_dir.exists():
-        app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+    if frontend_dir.exists() and not os.environ.get("VERCEL"):
+        app.mount("/static", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
     return app
 

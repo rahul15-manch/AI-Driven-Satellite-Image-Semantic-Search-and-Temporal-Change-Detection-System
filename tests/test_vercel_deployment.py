@@ -21,7 +21,7 @@ def test_vercel_json_structure():
     rewrites = config["rewrites"]
     sources = [r.get("source") for r in rewrites]
 
-    assert "/api/(.*)" in sources, "API rewrite rule must be defined"
+    assert any(s in ("/api/(.*)", "/api/:match*") for s in sources), "API rewrite rule must be defined"
     assert (ROOT / "public" / "index.html").exists(), "public/index.html must exist for edge static hosting"
     assert (ROOT / "public" / "css" / "styles.css").exists(), "public/css/styles.css must exist"
 

@@ -49,17 +49,17 @@ if app is not None and startup_error is None:
 
     @app.middleware("http")
     async def vercel_path_rewrite_middleware(request: Request, call_next):
-        # 1. If Vercel rewrote /api/(.*) with ?path=$1 query param
-        subpath = request.query_params.get("path")
+        # 1. If Vercel rewrote /api/:match* with ?path=:match* query param
+        subpath = request.query_params.get("path") or request.query_params.get("match")
         if subpath and request.url.path in ("/api/index", "/api/index.py", "/api", "/api/"):
             if not subpath.startswith("/"):
                 subpath = "/" + subpath
             request.scope["path"] = f"/api{subpath}"
-            # Clean 'path' key from query_string
+            # Clean 'path' and 'match' keys from query_string
             qs = request.scope.get("query_string", b"")
             if qs:
                 parsed = parse_qsl(qs.decode("latin1"))
-                filtered = [(k, v) for k, v in parsed if k != "path"]
+                filtered = [(k, v) for k, v in parsed if k not in ("path", "match")]
                 request.scope["query_string"] = urlencode(filtered).encode("latin1")
         else:
             # 2. Check Vercel routing headers

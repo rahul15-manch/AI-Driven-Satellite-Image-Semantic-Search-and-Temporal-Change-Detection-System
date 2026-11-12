@@ -50,7 +50,6 @@ app.py
 pages/
 .streamlit/
 
-# Technical Documentation & Bulk Results
+# Technical Documentation
 docs/
-experiments/results/
 .md FIles /

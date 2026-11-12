@@ -46,9 +46,9 @@ coverage.xml
 .vscode/
 
 # Streamlit Multi-Page App (Vercel serves FastAPI + Web Frontend)
-app.py
-pages/
-.streamlit/
+/app.py
+/pages/
+/.streamlit/
 
 # Technical Documentation
 docs/

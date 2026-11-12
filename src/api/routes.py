@@ -159,7 +159,12 @@ def serve_dataset_image(dataset: str, path: str):
 
     # Base directory for dataset
     if dataset_key == "rsicd":
-        base_dir = (ROOT / "data" / "raw" / "rsicd" / "images").resolve()
+        raw_rsicd = (ROOT / "data" / "raw" / "rsicd" / "images").resolve()
+        demo_rsicd = (ROOT / "data" / "demo_samples" / "rsicd").resolve()
+        if raw_rsicd.exists():
+            base_dir = raw_rsicd
+        else:
+            base_dir = demo_rsicd
     else:
         raw_levir = (ROOT / "data" / "raw" / "levir_cd").resolve()
         demo_levir = (ROOT / "data" / "demo_samples").resolve()

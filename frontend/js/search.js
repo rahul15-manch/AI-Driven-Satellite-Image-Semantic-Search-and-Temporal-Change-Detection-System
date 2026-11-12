@@ -158,7 +158,7 @@ export function initSearch() {
         <div class="search-result-card" data-rank="${item.rank}">
           <div class="search-result-main">
             <div class="search-result-thumb-box result-img-wrapper" data-src="${item.image_url}" data-caption="${escapeHtml(item.filename)} (Rank ${item.rank}, ${scoreLabel}: ${scoreFormatted})">
-              <img src="${item.image_url}" alt="${escapeHtml(item.filename)}" loading="lazy">
+              <img src="${item.image_url}" alt="${escapeHtml(item.filename)}" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'120\\' height=\\'120\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23888\\' stroke-width=\\'1\\'><rect width=\\'18\\' height=\\'18\\' x=\\'3\\' y=\\'3\\' rx=\\'2\\'/><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'/><path d=\\'m21 15-5-5L5 21\\'/></svg>';">
               <div class="rank-badge">#${item.rank}</div>
               <div class="category-tag">${escapeHtml(item.category)}</div>
             </div>

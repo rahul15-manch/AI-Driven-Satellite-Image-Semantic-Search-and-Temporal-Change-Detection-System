@@ -91,7 +91,7 @@ if app is not None and startup_error is None:
 
     @app.exception_handler(StarletteHTTPException)
     async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
-        if exc.status_code == 404:
+        if exc.status_code == 404 and (exc.detail == "Not Found" or not exc.detail):
             return JSONResponse(
                 status_code=404,
                 content={

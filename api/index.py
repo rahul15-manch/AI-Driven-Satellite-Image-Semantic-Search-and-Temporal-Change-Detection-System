@@ -75,12 +75,13 @@ if app is not None and startup_error is None:
     @app.api_route("/api/index", methods=["GET", "POST"])
     @app.api_route("/api/index.py", methods=["GET", "POST"])
     def debug_route(request: Request):
+        task_dir = Path("/var/task")
         return JSONResponse(
             content={
                 "url_path": request.url.path,
                 "scope_path": request.scope.get("path"),
-                "headers": dict(request.headers),
-                "query_params": dict(request.query_params),
+                "task_dir_contents": [p.name for p in task_dir.iterdir()] if task_dir.exists() else [],
+                "demo_samples": [p.name for p in (task_dir / "data" / "demo_samples").iterdir()] if (task_dir / "data" / "demo_samples").exists() else "not found",
                 "available_routes": [
                     r.path if hasattr(r, "path") else getattr(r, "name", str(type(r)))
                     for r in request.app.routes

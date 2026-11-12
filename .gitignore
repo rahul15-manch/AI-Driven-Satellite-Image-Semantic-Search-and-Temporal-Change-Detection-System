@@ -240,5 +240,6 @@ data/processed/levir_cd/*
 *.h5
 *.pth
 *.pt
+!experiments/checkpoints/*/*.pt
 *.bin
 *.onnx

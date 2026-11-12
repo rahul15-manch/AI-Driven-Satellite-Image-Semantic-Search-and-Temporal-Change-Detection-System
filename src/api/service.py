@@ -156,6 +156,16 @@ class RetrievalService:
                     if fn in self.gallery_ids:
                         self.category_map[fn] = img.get("derived_category", fn.rsplit("_", 1)[0])
                         self.captions_map[fn] = [sent["raw"] for sent in img.get("sentences", [])]
+        else:
+            # Serverless fallback: derive categories and semantic templates from gallery filenames
+            for fn in self.gallery_ids:
+                cat = fn.rsplit("_", 1)[0].replace("_", " ")
+                self.category_map[fn] = cat
+                self.captions_map[fn] = [
+                    f"an aerial photograph of {cat}",
+                    f"a remote sensing image showing {cat}",
+                    f"satellite view of {cat}",
+                ]
 
         # 5. Fit BM25 retriever
         self.bm25_retriever = BM25Retriever(

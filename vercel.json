@@ -12,7 +12,7 @@
   },
   "functions": {
     "api/index.py": {
-      "includeFiles": "{src/**,utils/**,experiments/configs/**,frontend/**}",
+      "includeFiles": "experiments/configs/**",
       "maxDuration": 60
     }
   },

@@ -1,0 +1,148 @@
+# Milestone 13: End-to-End Integration, Controlled Ablation Study, and Research Reproducibility
+# Team: Rahul (Team Lead), Tanishka Mukhi (Data & Change Detection), Adishri Abrol (Evaluation & Frontend)
+
+experiment:
+  name: "m13_integration_and_ablation"
+  milestone: "M13"
+  date: "2026-10-13"
+  seed: 42
+  device: "cpu"
+  num_threads: 4
+
+datasets:
+  retrieval:
+    name: "RSICD"
+    raw_dir: "data/raw/rsicd"
+    image_dir: "data/raw/rsicd/images"
+    json_path: "data/raw/rsicd/dataset_rsicd.json"
+    splits_path: "data/splits/rsicd/rsicd_splits.json"
+    test_gallery_size: 1093
+    test_queries_count: 5465
+    captions_per_image: 5
+
+  change_detection:
+    name: "LEVIR-CD"
+    raw_dir: "data/raw/levir_cd"
+    train_scenes: 445
+    val_scenes: 64
+    test_scenes: 128
+    image_resolution: [1024, 1024]
+    patch_size: 256
+    stride: 256
+    total_test_pixels: 134217728
+    gt_changed_pixels: 6837404
+
+retrieval_conditions:
+  - id: "bm25_loco"
+    name: "BM25 (Leave-One-Caption-Out)"
+    type: "lexical_caption_indexed"
+    status: "implemented_and_verified"
+  - id: "bm25_metadata"
+    name: "BM25 (Category Metadata)"
+    type: "lexical_category_only"
+    status: "implemented_and_verified"
+  - id: "bm25_leaky"
+    name: "BM25 (Original Diagnostic / Leaky)"
+    type: "lexical_all_captions"
+    status: "diagnostic_historical_reference"
+  - id: "clip_zeroshot"
+    name: "CLIP ViT-B/32"
+    type: "zero_shot_cross_modal"
+    status: "implemented_and_verified"
+  - id: "clip_prompt_ensemble"
+    name: "CLIP + Prompt Ensemble"
+    type: "prompt_ensemble_cross_modal"
+    status: "implemented_and_verified"
+  - id: "clip_metadata_rerank"
+    name: "CLIP + Metadata Reranking"
+    type: "hybrid_reranking"
+    status: "NOT_IMPLEMENTED"
+    notes: "Documented scope discrepancy; never implemented in M7 or subsequent milestones"
+
+change_detection_models:
+  - id: "b1_pixel_diff"
+    name: "B1 Pixel Difference"
+    type: "classical"
+    frozen_tau: 0.4100
+  - id: "b2_ssim"
+    name: "B2 SSIM"
+    type: "classical"
+    frozen_tau: 0.9000
+  - id: "b3_cva"
+    name: "B3 Change Vector Analysis"
+    type: "classical"
+    frozen_tau: 0.4050
+  - id: "m7_fc_siam_diff"
+    name: "M7 FC-Siam-diff"
+    type: "learned_siamese_cnn"
+    frozen_tau: 0.5500
+    checkpoint: "experiments/checkpoints/m7/fc_siam_diff_best.pt"
+  - id: "m8_snunet"
+    name: "M8 SNUNet-CD"
+    type: "learned_dense_siamese"
+    frozen_tau: 0.5000
+    checkpoint: "experiments/checkpoints/m8/snunet_best.pt"
+  - id: "m9_bit_cd"
+    name: "M9 BIT-CD"
+    type: "learned_transformer"
+    frozen_tau: 0.4500
+    checkpoint: "experiments/checkpoints/m9/bit_cd_best.pt"
+  - id: "m10_qat_cd_calibrated"
+    name: "M10 QAT-CD (Calibrated)"
+    type: "quality_gated_transformer"
+    gamma: 0.0
+    frozen_tau: 0.4500
+    checkpoint: "experiments/checkpoints/m9/bit_cd_best.pt"
+  - id: "m10_qat_cd_active"
+    name: "M10 QAT-CD (Active Gating)"
+    type: "quality_gated_transformer"
+    gamma: 0.30
+    frozen_tau: 0.4500
+    checkpoint: "experiments/checkpoints/m9/bit_cd_best.pt"
+
+qat_ablations:
+  baseline: "Ablation_NoQuality"
+  gamma_nominal: 0.30
+  weights_nominal: [0.34, 0.33, 0.33]
+  conditions:
+    - name: "QAT_CD_Calibrated"
+      gamma: 0.0
+      use_reg: true
+      use_illum: true
+      use_sharp: true
+      use_uncertainty: true
+    - name: "QAT_CD_ActiveAll"
+      gamma: 0.30
+      use_reg: true
+      use_illum: true
+      use_sharp: true
+      use_uncertainty: true
+    - name: "QAT_CD_RegOnly"
+      gamma: 0.30
+      use_reg: true
+      use_illum: false
+      use_sharp: false
+      use_uncertainty: true
+    - name: "QAT_CD_IllumOnly"
+      gamma: 0.30
+      use_reg: false
+      use_illum: true
+      use_sharp: false
+      use_uncertainty: true
+    - name: "QAT_CD_SharpOnly"
+      gamma: 0.30
+      use_reg: false
+      use_illum: false
+      use_sharp: true
+      use_uncertainty: true
+    - name: "QAT_CD_NoUncertainty"
+      gamma: 0.30
+      use_reg: true
+      use_illum: true
+      use_sharp: true
+      use_uncertainty: false
+
+paths:
+  results_dir: "experiments/results/m13"
+  figures_dir: "experiments/figures/m13"
+  report_path: "docs/m13_end_to_end_integration_and_ablation_report.md"

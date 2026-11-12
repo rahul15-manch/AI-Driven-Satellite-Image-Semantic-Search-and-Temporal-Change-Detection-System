@@ -1,0 +1,49 @@
+# Milestone 4: Semantic Retrieval Baseline Configuration
+
+experiment_name: "m4_semantic_retrieval_baseline"
+seed: 42
+
+dataset:
+  name: "RSICD"
+  image_dir: "data/raw/rsicd/images"
+  json_path: "data/raw/rsicd/dataset_rsicd.json"
+  splits_path: "data/splits/rsicd/rsicd_splits.json"
+  split: "test"
+
+bm25:
+  k1: 1.5
+  b: 0.75
+  aggregation_mode: "leave_one_caption_out" # Options: 'leave_one_caption_out' (Corrected Mode A), 'combined_document' (Legacy Leaky Diagnostic), 'category_metadata' (Mode B)
+
+clip:
+  model_name: "openai/clip-vit-base-patch32"
+  device: "cpu" # Strictly enforced
+  batch_size: 32
+  embedding_dim: 512
+
+faiss:
+  index_type: "IndexFlatIP"
+  metric: "cosine"
+
+prompt_ensemble:
+  enabled: true
+  templates:
+    - "{query}"
+    - "a satellite image of {query}"
+    - "a remote sensing image of {query}"
+    - "an overhead image showing {query}"
+    - "an aerial photograph of {query}"
+
+evaluation:
+  protocol: "caption_to_own_image"
+  metrics: ["R@1", "R@5", "R@10", "MRR"]
+  save_per_query_results: true
+
+profiling:
+  warmup_runs: 5
+  profile_query_count: 200
+
+paths:
+  cache_dir: "experiments/cache/clip"
+  results_dir: "experiments/results/m4"
+  figures_dir: "experiments/figures/m4"

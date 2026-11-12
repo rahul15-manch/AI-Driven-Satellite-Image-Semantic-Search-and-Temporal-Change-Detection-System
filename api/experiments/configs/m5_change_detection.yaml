@@ -1,0 +1,66 @@
+# Milestone 5: Classical Bi-Temporal Change Detection Baselines Configuration
+
+experiment_name: "m5_classical_change_detection"
+seed: 42
+
+dataset:
+  name: "LEVIR-CD"
+  raw_dir: "data/raw/levir_cd"
+  splits_path: "data/splits/levir_cd/levir_splits.json"
+  expected_counts:
+    train: 445
+    val: 64
+    test: 128
+    total: 637
+  original_height: 1024
+  original_width: 1024
+  patch_size: 256
+  stride: 256
+  padding_mode: "drop"
+
+methods:
+  b1_pixel_diff:
+    enabled: true
+    aggregation_mode: "mean" # Primary formulation: 1/3 * (|R2-R1| + |G2-G1| + |B2-B1|)
+
+  b2_ssim:
+    enabled: true
+    win_size: 11
+    sigma: 1.5
+    channel_mode: "grayscale" # ITU-R 601-2 luminance
+
+  b3_cva:
+    enabled: true
+    normalize: true # Scaled by 1/sqrt(3) to [0, 1]
+
+thresholding:
+  primary_policy: "validation_f1_max"
+  min_threshold: 0.005
+  max_threshold: 0.995
+  num_candidates: 199
+  tie_breaker: "smallest_threshold"
+  evaluate_otsu_secondary: true
+
+evaluation:
+  metrics:
+    - "precision"
+    - "recall"
+    - "f1"
+    - "iou"
+    - "accuracy"
+    - "tp"
+    - "fp"
+    - "fn"
+    - "tn"
+    - "gt_changed_ratio"
+    - "pred_changed_ratio"
+  reconstruct_full_images: true
+
+profiling:
+  measure_latency: true
+  measure_memory: true
+  target_device: "cpu"
+
+paths:
+  results_dir: "experiments/results/m5"
+  figures_dir: "experiments/figures/m5"

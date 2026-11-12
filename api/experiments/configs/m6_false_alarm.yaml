@@ -1,0 +1,62 @@
+# Milestone 6: False-Alarm Analysis & Perturbation Robustness Configuration
+
+experiment_name: "m6_false_alarm_robustness"
+seed: 42
+
+dataset:
+  name: "LEVIR-CD"
+  raw_dir: "data/raw/levir_cd"
+  splits_path: "data/splits/levir_cd/levir_splits.json"
+  split: "test"
+  expected_test_pairs: 128
+  original_height: 1024
+  original_width: 1024
+  patch_size: 256
+  stride: 256
+  padding_mode: "drop"
+
+# M5 validation-calibrated frozen thresholds (strictly enforced without test-time retuning)
+frozen_thresholds:
+  B1_Pixel_Diff: 0.4100
+  B2_SSIM: 0.9000
+  B3_CVA: 0.4050
+
+perturbations:
+  global_illumination_shift:
+    enabled: true
+    target_image: "t2"
+    severities: ["mild", "medium", "strong"]
+
+  gaussian_blur:
+    enabled: true
+    target_image: "t2"
+    severities: ["mild", "medium", "strong"]
+
+  geometric_misregistration:
+    enabled: true
+    target_image: "t2"
+    severities: ["mild", "medium", "strong"]
+
+  localized_occlusion_shadow:
+    enabled: true
+    target_image: "t2"
+    severities: ["mild", "medium", "strong"]
+
+methods:
+  B1_Pixel_Diff:
+    aggregation_mode: "mean"
+  B2_SSIM:
+    win_size: 11
+    sigma: 1.5
+    channel_mode: "grayscale"
+  B3_CVA:
+    normalize: true
+
+paths:
+  results_dir: "experiments/results/m6"
+  figures_dir: "experiments/figures/m6"
+
+profiling:
+  measure_latency: true
+  measure_memory: true
+  target_device: "cpu"

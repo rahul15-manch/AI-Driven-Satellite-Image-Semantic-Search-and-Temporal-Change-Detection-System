@@ -1,0 +1,56 @@
+experiment:
+  name: m10_qat_cd_change_detection
+  milestone: M10
+  seed: 42
+  device: cpu
+  num_threads: 4
+
+dataset:
+  name: LEVIR-CD
+  raw_dir: data/raw/levir_cd
+  patch_size: 256
+  stride: 256
+  padding_mode: drop
+  train_split: train
+  val_split: val
+  test_split: test
+
+base_detector:
+  model_type: BIT_CD
+  checkpoint_path: experiments/checkpoints/m9/bit_cd_best.pt
+  frozen_threshold: 0.45
+
+quality_estimator:
+  signals:
+    registration:
+      enabled: true
+      weight: 0.34
+      operator: sobel
+      eps: 0.0001
+    illumination:
+      enabled: true
+      weight: 0.33
+      kernel_size: 15
+      eps: 0.0001
+    sharpness:
+      enabled: true
+      weight: 0.33
+      kernel_size: 15
+      eps: 0.0001
+  uncertainty:
+    enabled: true
+    formulation: margin_uncertainty
+
+gating:
+  formulation: attenuation
+  attenuation_strength: 0.30
+
+calibration:
+  policy: validation_f1_optimal
+  gamma_candidates: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+  threshold_candidates: [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60]
+
+paths:
+  checkpoint_dir: experiments/checkpoints/m10
+  results_dir: experiments/results/m10
+  figures_dir: experiments/figures/m10

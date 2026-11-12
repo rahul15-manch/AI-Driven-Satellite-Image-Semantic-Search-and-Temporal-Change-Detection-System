@@ -11,7 +11,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def get_project_root() -> Path:
     """Returns absolute path to the project root directory."""
-    return PROJECT_ROOT
+    here = Path(__file__).resolve()
+    for candidate in [here.parent.parent, here.parent, Path.cwd(), here.parent.parent.parent]:
+        if (candidate / "experiments" / "configs").exists():
+            return candidate
+    return here.parent.parent
 
 
 def load_yaml_config(relative_or_abs_path: str | Path) -> Dict[str, Any]:
@@ -25,7 +29,14 @@ def load_yaml_config(relative_or_abs_path: str | Path) -> Dict[str, Any]:
     """
     path = Path(relative_or_abs_path)
     if not path.is_absolute():
-        path = PROJECT_ROOT / path
+        root = get_project_root()
+        candidate = root / path
+        if candidate.exists():
+            path = candidate
+        elif (Path.cwd() / path).exists():
+            path = Path.cwd() / path
+        else:
+            path = candidate
 
     if not path.exists():
         raise FileNotFoundError(f"Configuration file not found: {path}")

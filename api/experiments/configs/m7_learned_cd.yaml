@@ -1,0 +1,47 @@
+experiment:
+  name: m7_learned_change_detection
+  milestone: M7
+  seed: 42
+  device: cpu
+  num_threads: 4
+
+dataset:
+  name: LEVIR-CD
+  raw_dir: data/raw/levir_cd
+  patch_size: 256
+  stride: 256
+  padding_mode: drop
+  train_split: train
+  val_split: val
+  test_split: test
+
+model:
+  architecture: FC-Siam-diff
+  in_channels: 3
+  out_channels: 1
+  base_channels: 16
+  max_param_ceiling: 2000000
+
+training:
+  batch_size: 16
+  epochs: 5
+  samples_per_epoch: 512
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: AdamW
+  loss:
+    name: BCEDiceLoss
+    bce_weight: 1.0
+    dice_weight: 1.0
+    smooth: 1.0
+
+thresholding:
+  policy: validation_f1_optimal
+  min_threshold: 0.05
+  max_threshold: 0.95
+  num_candidates: 19
+
+paths:
+  checkpoint_dir: experiments/checkpoints/m7
+  results_dir: experiments/results/m7
+  figures_dir: experiments/figures/m7

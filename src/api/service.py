@@ -173,7 +173,8 @@ class RetrievalService:
             b=config["bm25"]["b"],
             aggregation_mode="leave_one_caption_out",
         )
-        self.bm25_retriever.fit(self.captions_map, self.gallery_ids)
+        captions_seq = [self.captions_map.get(img_id, [f"aerial scene {img_id}"]) for img_id in self.gallery_ids]
+        self.bm25_retriever.fit(image_ids=self.gallery_ids, image_captions=captions_seq)
 
         self._initialized = True
 

@@ -157,18 +157,18 @@ def serve_dataset_image(dataset: str, path: str):
             detail=f"Invalid dataset '{dataset}'. Must be 'rsicd' or 'levir_cd'.",
         )
 
-    # Base directory for dataset
+    # Base directory for dataset with graceful fallback to curated demo samples
     if dataset_key == "rsicd":
         raw_rsicd = (ROOT / "data" / "raw" / "rsicd" / "images").resolve()
         demo_rsicd = (ROOT / "data" / "demo_samples" / "rsicd").resolve()
-        if raw_rsicd.exists():
+        if (raw_rsicd / path).exists():
             base_dir = raw_rsicd
         else:
             base_dir = demo_rsicd
     else:
         raw_levir = (ROOT / "data" / "raw" / "levir_cd").resolve()
         demo_levir = (ROOT / "data" / "demo_samples").resolve()
-        if raw_levir.exists():
+        if (raw_levir / path).exists():
             base_dir = raw_levir
         else:
             base_dir = demo_levir

@@ -45,19 +45,35 @@ if app is not None and startup_error is None:
     from fastapi.responses import JSONResponse
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
+    from urllib.parse import parse_qsl, urlencode
+
     @app.middleware("http")
     async def vercel_path_rewrite_middleware(request: Request, call_next):
-        # In Vercel serverless environments, internal rewrites often rewrite the path to /api/index.py.
-        # Vercel provides the original matched path in the 'x-matched-path' header.
-        original_path = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-uri")
-        if original_path and request.url.path in ("/api/index", "/api/index.py", "/api", "/api/"):
-            clean_path = original_path.split("?")[0]
-            request.scope["path"] = clean_path
+        # 1. If Vercel rewrote /api/(.*) with ?path=$1 query param
+        subpath = request.query_params.get("path")
+        if subpath and request.url.path in ("/api/index", "/api/index.py", "/api", "/api/"):
+            if not subpath.startswith("/"):
+                subpath = "/" + subpath
+            request.scope["path"] = f"/api{subpath}"
+            # Clean 'path' key from query_string
+            qs = request.scope.get("query_string", b"")
+            if qs:
+                parsed = parse_qsl(qs.decode("latin1"))
+                filtered = [(k, v) for k, v in parsed if k != "path"]
+                request.scope["query_string"] = urlencode(filtered).encode("latin1")
+        else:
+            # 2. Check Vercel routing headers
+            original_path = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-uri")
+            if original_path and request.url.path in ("/api/index", "/api/index.py", "/api", "/api/"):
+                clean_path = original_path.split("?")[0]
+                request.scope["path"] = clean_path
+
         return await call_next(request)
 
     @app.api_route("/debug", methods=["GET", "POST"])
     @app.api_route("/api/debug", methods=["GET", "POST"])
     @app.api_route("/api/index", methods=["GET", "POST"])
+    @app.api_route("/api/index.py", methods=["GET", "POST"])
     def debug_route(request: Request):
         return JSONResponse(
             content={
@@ -81,9 +97,12 @@ if app is not None and startup_error is None:
                     "error": "RouteNotFound",
                     "requested_url_path": request.url.path,
                     "scope_path": request.scope.get("path"),
+                    "headers": dict(request.headers),
+                    "query_params": dict(request.query_params),
                     "available_routes": [r.path for r in request.app.routes if hasattr(r, "path")],
                 },
             )
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 if app is None or startup_error is not None:

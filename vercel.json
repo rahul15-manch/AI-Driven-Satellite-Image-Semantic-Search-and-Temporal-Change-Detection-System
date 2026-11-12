@@ -16,8 +16,6 @@
         "src/**",
         "utils/**",
         "experiments/configs/**",
-        "experiments/results/**",
-        "experiments/figures/**",
         "frontend/**"
       ],
       "maxDuration": 60

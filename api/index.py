@@ -7,15 +7,14 @@ import sys
 import traceback
 from pathlib import Path
 
-# Ensure project root is in sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-root_str = str(PROJECT_ROOT)
-if root_str not in sys.path:
-    sys.path.insert(0, root_str)
+# Ensure project root and api directory are in sys.path
+API_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = API_DIR.parent
 
-cwd = os.getcwd()
-if cwd not in sys.path:
-    sys.path.insert(0, cwd)
+for p in [str(PROJECT_ROOT), str(API_DIR), os.getcwd()]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+root_str = str(PROJECT_ROOT)
 
 # Set working directory to project root for consistent relative paths
 try:

@@ -3,7 +3,8 @@
   "build": {
     "env": {
       "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1",
-      "PYTHONPATH": "."
+      "PYTHONPATH": ".",
+      "UV_EXTRA_INDEX_URL": "https://download.pytorch.org/whl/cpu"
     }
   },
   "env": {

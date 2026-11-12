@@ -2,8 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "build": {
     "env": {
-      "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1"
+      "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1",
+      "PYTHONPATH": "."
     }
+  },
+  "env": {
+    "PYTHONPATH": "."
   },
   "functions": {
     "api/index.py": {

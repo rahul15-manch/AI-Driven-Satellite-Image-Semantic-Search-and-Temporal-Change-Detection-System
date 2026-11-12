@@ -47,12 +47,18 @@ if app is not None and startup_error is None:
 
     @app.api_route("/debug", methods=["GET", "POST"])
     @app.api_route("/api/debug", methods=["GET", "POST"])
+    @app.api_route("/api/index", methods=["GET", "POST"])
     def debug_route(request: Request):
         return JSONResponse(
             content={
                 "url_path": request.url.path,
                 "scope_path": request.scope.get("path"),
-                "available_routes": [r.path for r in request.app.routes if hasattr(r, "path")],
+                "headers": dict(request.headers),
+                "query_params": dict(request.query_params),
+                "available_routes": [
+                    r.path if hasattr(r, "path") else getattr(r, "name", str(type(r)))
+                    for r in request.app.routes
+                ],
             }
         )
 

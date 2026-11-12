@@ -1,0 +1,5 @@
+surface_class,nominal_mean_vari,overexposed_vari,underexposed_vari,caveat_present,caveat_exact_text,finite_numeric_guarantee,vari_range_min,vari_range_max
+Dense Vegetation,0.0941,0.0944,0.0951,False,"VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",True,-0.2273,0.3367
+Bare Soil / Agricultural,0.2613,0.262,0.2646,False,"VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",True,-0.0195,0.9394
+Urban Concrete / Rooftops,0.1451,0.1458,0.1483,False,"VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",True,-1.0,1.0
+Water Body / Wetland,0.1289,0.1299,0.1325,False,"VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",True,-1.0,1.0

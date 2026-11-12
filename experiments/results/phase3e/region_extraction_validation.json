@@ -1,0 +1,80 @@
+[
+  {
+    "test_case": "empty_mask",
+    "raw_changed_pixels": 0,
+    "cleaned_changed_pixels": 0,
+    "region_count": 0,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": null
+  },
+  {
+    "test_case": "sub_threshold_noise",
+    "raw_changed_pixels": 4,
+    "cleaned_changed_pixels": 0,
+    "region_count": 0,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": null
+  },
+  {
+    "test_case": "boundary_touching_regions",
+    "raw_changed_pixels": 7600,
+    "cleaned_changed_pixels": 7600,
+    "region_count": 3,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": 0.5
+  },
+  {
+    "test_case": "bridged_adjacent_components",
+    "raw_changed_pixels": 4850,
+    "cleaned_changed_pixels": 4850,
+    "region_count": 2,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": 1.0
+  },
+  {
+    "test_case": "large_connected_footprint",
+    "raw_changed_pixels": 62500,
+    "cleaned_changed_pixels": 62500,
+    "region_count": 1,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": 0.25
+  },
+  {
+    "test_case": "fragmented_excess_regions",
+    "raw_changed_pixels": 20000,
+    "cleaned_changed_pixels": 20000,
+    "region_count": 5,
+    "max_regions_respected": true,
+    "all_bboxes_within_bounds": true,
+    "context_padding_within_bounds": true,
+    "top_left_origin_preserved": true,
+    "deterministic_descending_order": true,
+    "physical_area_gating_verified": true,
+    "gsd_supplied": 0.5
+  }
+]

@@ -1,3 +1,6 @@
+# CPU-only PyTorch wheel repository (crucial for Vercel/serverless bundle sizing)
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # Core Scientific & Machine Learning
 torch>=2.0.0
 numpy>=1.24.0
@@ -12,3 +15,14 @@ opencv-python-headless>=4.8.0
 # Testing & Profiling
 pytest>=7.3.0
 psutil>=5.9.0
+
+# Web Application & Serving Layer
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+httpx>=0.24.0
+
+# Multimodal & Vector Search
+transformers>=4.30.0
+faiss-cpu>=1.7.0

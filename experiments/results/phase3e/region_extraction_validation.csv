@@ -1,0 +1,7 @@
+test_case,raw_changed_pixels,cleaned_changed_pixels,region_count,max_regions_respected,all_bboxes_within_bounds,context_padding_within_bounds,top_left_origin_preserved,deterministic_descending_order,physical_area_gating_verified,gsd_supplied
+empty_mask,0,0,0,True,True,True,True,True,True,
+sub_threshold_noise,4,0,0,True,True,True,True,True,True,
+boundary_touching_regions,7600,7600,3,True,True,True,True,True,True,0.5
+bridged_adjacent_components,4850,4850,2,True,True,True,True,True,True,1.0
+large_connected_footprint,62500,62500,1,True,True,True,True,True,True,0.25
+fragmented_excess_regions,20000,20000,5,True,True,True,True,True,True,0.5

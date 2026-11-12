@@ -12,6 +12,18 @@ class HealthResponse(BaseModel):
     version: str = "1.0.0"
     milestone: str = "M12"
     device: str = "cpu"
+    models_loaded: List[str] = Field(
+        default_factory=lambda: [
+            "B1_Pixel_Diff",
+            "B2_SSIM",
+            "B3_CVA",
+            "M7_FC_Siam_diff",
+            "M8_SNUNet",
+            "M9_BIT_CD",
+            "M10_QAT_CD",
+            "RSICD_CLIP",
+        ]
+    )
     services: Dict[str, bool] = Field(
         default_factory=lambda: {
             "retrieval": True,

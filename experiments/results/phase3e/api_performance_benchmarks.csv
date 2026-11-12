@@ -1,0 +1,6 @@
+iteration,total_latency_ms,detector_latency_ms,other_overhead_ms,rss_before_mb,rss_after_mb,rss_delta_mb,status
+1,14408.89,323.88,14085.01,640.94,312.97,-327.97,success
+2,1156.54,358.4,798.14,312.97,634.97,322.0,success
+3,952.17,323.43,628.74,634.97,636.36,1.39,success
+4,1080.45,324.16,756.29,636.36,637.22,0.86,success
+5,927.64,320.3,607.34,637.22,595.95,-41.27,success

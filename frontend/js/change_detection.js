@@ -317,6 +317,7 @@ export async function initChangeDetection() {
   const tuRejectionText = document.getElementById("tu-rejection-text");
 
   // Overview elements
+  const tuOverviewRibbon = document.getElementById("tu-overview-ribbon");
   const tuMetaStatus = document.getElementById("tu-meta-status");
   const tuMetaModel = document.getElementById("tu-meta-model");
   const tuMetaChangedPct = document.getElementById("tu-meta-changed-pct");
@@ -451,6 +452,10 @@ export async function initChangeDetection() {
     dropzone.addEventListener("drop", (e) => {
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
         handleFileSelection(e.dataTransfer.files[0], target);
+        try {
+          const input = target === "t1" ? fileInputT1 : fileInputT2;
+          if (input) input.files = e.dataTransfer.files;
+        } catch (_) {}
       }
     });
   };
@@ -475,9 +480,11 @@ export async function initChangeDetection() {
     return new Promise((resolve) => {
       const img1 = new Image();
       img1.crossOrigin = "anonymous";
+      img1.onerror = () => resolve(maskUri);
       img1.onload = () => {
         const maskImg = new Image();
         maskImg.crossOrigin = "anonymous";
+        maskImg.onerror = () => resolve(t1Src);
         maskImg.onload = () => {
           const canvas = document.createElement("canvas");
           canvas.width = img1.naturalWidth || img1.width;
@@ -592,6 +599,7 @@ export async function initChangeDetection() {
             <div class="reg-metric-item"><span>Confidence:</span><strong>${((diag.confidence_score || 0)*100).toFixed(1)}%</strong></div>
           `;
         }
+        if (tuOverviewRibbon) tuOverviewRibbon.style.display = "none";
         if (tuQuadGrid) tuQuadGrid.style.display = "none";
         if (tuRegionsSection) tuRegionsSection.style.display = "none";
         if (tuVariSection) tuVariSection.style.display = "none";
@@ -606,6 +614,7 @@ export async function initChangeDetection() {
       }
 
       if (tuRejectionBanner) tuRejectionBanner.classList.add("hidden");
+      if (tuOverviewRibbon) tuOverviewRibbon.style.display = "flex";
       if (tuQuadGrid) tuQuadGrid.style.display = "grid";
       if (tuRegionsSection) tuRegionsSection.style.display = "block";
       if (tuVariSection) tuVariSection.style.display = "block";

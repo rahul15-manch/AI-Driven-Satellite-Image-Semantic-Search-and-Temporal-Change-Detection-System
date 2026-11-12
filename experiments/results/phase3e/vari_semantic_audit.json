@@ -1,0 +1,46 @@
+[
+  {
+    "surface_class": "Dense Vegetation",
+    "nominal_mean_vari": 0.0941,
+    "overexposed_vari": 0.0944,
+    "underexposed_vari": 0.0951,
+    "caveat_present": false,
+    "caveat_exact_text": "VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",
+    "finite_numeric_guarantee": true,
+    "vari_range_min": -0.2273,
+    "vari_range_max": 0.3367
+  },
+  {
+    "surface_class": "Bare Soil / Agricultural",
+    "nominal_mean_vari": 0.2613,
+    "overexposed_vari": 0.262,
+    "underexposed_vari": 0.2646,
+    "caveat_present": false,
+    "caveat_exact_text": "VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",
+    "finite_numeric_guarantee": true,
+    "vari_range_min": -0.0195,
+    "vari_range_max": 0.9394
+  },
+  {
+    "surface_class": "Urban Concrete / Rooftops",
+    "nominal_mean_vari": 0.1451,
+    "overexposed_vari": 0.1458,
+    "underexposed_vari": 0.1483,
+    "caveat_present": false,
+    "caveat_exact_text": "VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",
+    "finite_numeric_guarantee": true,
+    "vari_range_min": -1.0,
+    "vari_range_max": 1.0
+  },
+  {
+    "surface_class": "Water Body / Wetland",
+    "nominal_mean_vari": 0.1289,
+    "overexposed_vari": 0.1299,
+    "underexposed_vari": 0.1325,
+    "caveat_present": false,
+    "caveat_exact_text": "VARI is derived strictly from visible optical bands (Red, Green, Blue) and does NOT contain Near-Infrared (NIR) data.",
+    "finite_numeric_guarantee": true,
+    "vari_range_min": -1.0,
+    "vari_range_max": 1.0
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "mean_total_latency_ms": 3705.14,
+  "std_total_latency_ms": 5984.31,
+  "mean_detector_latency_ms": 330.03,
+  "mean_peak_rss_mb": 637.22,
+  "mean_rss_leakage_mb": -9.0,
+  "iterations": [
+    {
+      "iteration": 1,
+      "total_latency_ms": 14408.89,
+      "detector_latency_ms": 323.88,
+      "other_overhead_ms": 14085.01,
+      "rss_before_mb": 640.94,
+      "rss_after_mb": 312.97,
+      "rss_delta_mb": -327.97,
+      "status": "success"
+    },
+    {
+      "iteration": 2,
+      "total_latency_ms": 1156.54,
+      "detector_latency_ms": 358.4,
+      "other_overhead_ms": 798.14,
+      "rss_before_mb": 312.97,
+      "rss_after_mb": 634.97,
+      "rss_delta_mb": 322.0,
+      "status": "success"
+    },
+    {
+      "iteration": 3,
+      "total_latency_ms": 952.17,
+      "detector_latency_ms": 323.43,
+      "other_overhead_ms": 628.74,
+      "rss_before_mb": 634.97,
+      "rss_after_mb": 636.36,
+      "rss_delta_mb": 1.39,
+      "status": "success"
+    },
+    {
+      "iteration": 4,
+      "total_latency_ms": 1080.45,
+      "detector_latency_ms": 324.16,
+      "other_overhead_ms": 756.29,
+      "rss_before_mb": 636.36,
+      "rss_after_mb": 637.22,
+      "rss_delta_mb": 0.86,
+      "status": "success"
+    },
+    {
+      "iteration": 5,
+      "total_latency_ms": 927.64,
+      "detector_latency_ms": 320.3,
+      "other_overhead_ms": 607.34,
+      "rss_before_mb": 637.22,
+      "rss_after_mb": 595.95,
+      "rss_delta_mb": -41.27,
+      "status": "success"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+perturbation_mode,parameter,registration_status,match_count,inlier_count,inlier_ratio,reprojection_error,ecc_correlation,confidence_score,warnings_count,downstream_analysis_halted,latency_ms
+Control (Identity),None,identity_aligned,1000,1000,1.0,0.0,,1.0,0,False,1.97
+Translation,1 px (X+Y),aligned_homography,1543,1503,0.9741,0.8519,,0.817,0,False,19.58
+Translation,2 px (X+Y),aligned_homography,1529,1378,0.9012,0.7188,,0.7721,0,False,20.52
+Translation,5 px (X+Y),aligned_homography,1500,1221,0.814,0.7139,,0.7417,0,False,20.71
+Translation,10 px (X+Y),aligned_homography,1470,1438,0.9782,0.5761,,0.8223,0,False,20.18
+Translation,20 px (X+Y),aligned_homography,1345,1313,0.9762,0.7346,,0.802,0,False,20.19
+Rotation,0.5 degrees,aligned_homography,1469,1431,0.9741,0.9015,,0.8154,0,False,20.23
+Rotation,1.0 degrees,aligned_homography,1432,1373,0.9588,0.8869,,0.8077,0,False,20.14
+Rotation,2.0 degrees,aligned_homography,1426,1382,0.9691,0.8564,,0.8106,0,False,20.1
+Rotation,5.0 degrees,aligned_homography,1364,1296,0.9501,0.9027,,0.7924,0,False,20.05
+Rotation,10.0 degrees,aligned_homography,1254,1229,0.9801,0.9528,,0.802,0,False,19.74
+Rotation,45.0 degrees,aligned_affine,1063,835,0.7855,1.0419,,0.6707,1,False,19.94
+Scale Difference,0.8x isotropic,aligned_homography,708,615,0.8686,1.1367,,0.7291,0,False,19.81
+Scale Difference,0.95x isotropic,aligned_homography,1144,1107,0.9677,0.9034,,0.8114,0,False,20.12
+Scale Difference,1.05x isotropic,aligned_homography,1188,1169,0.984,0.8826,,0.7935,0,False,20.12
+Scale Difference,1.2x isotropic,aligned_homography,864,797,0.9225,1.0465,,0.7208,0,False,19.61
+Brightness Shift,+20%,aligned_homography,1598,1590,0.995,0.0848,,0.8715,0,False,20.85
+Brightness Shift,-20%,aligned_homography,1868,1867,0.9995,0.0192,,0.8774,0,False,19.9
+Brightness Shift,+50%,aligned_homography,1089,1070,0.9826,0.1336,,0.8393,0,False,21.06
+Brightness Shift,-50%,aligned_homography,1637,1633,0.9976,0.0376,,0.8756,0,False,18.27
+Contrast Shift,1.3x,aligned_homography,1547,1535,0.9922,0.152,,0.862,0,False,20.57
+Contrast Shift,0.7x,aligned_homography,1805,1800,0.9972,0.0181,,0.8772,0,False,18.5
+Gaussian Noise,sigma=5,aligned_homography,1827,1821,0.9967,0.0607,,0.8743,0,False,22.04
+Gaussian Noise,sigma=15,aligned_homography,1629,1614,0.9908,0.1694,,0.8656,0,False,21.04
+Gaussian Noise,sigma=25,aligned_homography,1449,1419,0.9793,0.2856,,0.8545,0,False,20.75
+Dimension Discrepancy,256x256 vs 512x512,aligned_affine,537,441,0.8212,1.6104,,0.6485,1,False,13.49
+Partial Overlap,62 px crop offset,aligned_homography,1032,1021,0.9893,0.5822,,0.7929,0,False,19.34
+Perspective Parallax,Non-affine homography,aligned_homography,778,747,0.9602,1.1227,,0.7903,0,False,19.07
+Featureless Surface,Uniform gray (zero texture),rejected_blank_image,0,0,0.0,0.0,,0.0,1,True,1.58
+Unrelated Image Pair,RSICD Pond vs LEVIR Urban,rejected,3,0,0.0,0.0,,0.0,1,True,11.06

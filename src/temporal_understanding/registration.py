@@ -67,16 +67,16 @@ class RegistrationPolicy:
     allow_multichannel_tiff: bool = True
 
     # Stage A: Coarse ORB alignment parameters
-    orb_max_features: int = 2000
+    orb_max_features: int = 5000
     orb_scale_factor: float = 1.2
     orb_n_levels: int = 8
-    ratio_test_threshold: float = 0.75
+    ratio_test_threshold: float = 0.80
     min_matches: int = 15
     min_inliers: int = 10
-    min_inlier_ratio: float = 0.40
-    max_reprojection_error: float = 3.5
-    min_spatial_coverage: float = 0.10
-    high_quality_threshold: float = 0.70
+    min_inlier_ratio: float = 0.35
+    max_reprojection_error: float = 4.0
+    min_spatial_coverage: float = 0.05
+    high_quality_threshold: float = 0.65
 
     # Stage B: Fine ECC alignment parameters
     ecc_enabled: bool = True
@@ -568,7 +568,7 @@ class ImageCoRegistrator:
                 if "homography" in diag.transformation_type
                 else RegistrationStatus.ALIGNED_AFFINE
             )
-        elif self.policy.allow_affine_fallback and diag.confidence_score >= 0.35:
+        elif self.policy.allow_affine_fallback and (diag.confidence_score >= 0.25 or (diag.inlier_count >= 8 and diag.reprojection_error <= 4.0)):
             diag.registration_status = RegistrationStatus.ALIGNED_AFFINE
             diag.warnings.append("Registration confidence is moderate. Proceed with quality-aware caution.")
         else:

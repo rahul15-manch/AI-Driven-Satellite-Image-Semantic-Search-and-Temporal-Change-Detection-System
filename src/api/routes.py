@@ -161,7 +161,14 @@ def serve_dataset_image(dataset: str, path: str):
     if dataset_key == "rsicd":
         base_dir = (ROOT / "data" / "raw" / "rsicd" / "images").resolve()
     else:
-        base_dir = (ROOT / "data" / "raw" / "levir_cd").resolve()
+        raw_levir = (ROOT / "data" / "raw" / "levir_cd").resolve()
+        demo_levir = (ROOT / "data" / "demo_samples").resolve()
+        if raw_levir.exists():
+            base_dir = raw_levir
+        else:
+            base_dir = demo_levir
+            if path.startswith("test/"):
+                path = path[5:]
 
     target_path = (base_dir / path).resolve()
 

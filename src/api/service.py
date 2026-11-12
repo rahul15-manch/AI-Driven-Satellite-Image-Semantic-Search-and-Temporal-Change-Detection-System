@@ -303,8 +303,12 @@ class ChangeDetectionService:
         return self.detectors[clean_id], tau
 
     def list_available_pairs(self) -> List[Dict[str, Any]]:
-        """Returns verified LEVIR-CD test scene pairs."""
+        """Returns verified LEVIR-CD test scene pairs (raw or curated demo pack)."""
         test_dir = ROOT / "data" / "raw" / "levir_cd" / "test"
+        is_raw = test_dir.exists()
+        if not is_raw:
+            test_dir = ROOT / "data" / "demo_samples"
+
         dir_a = test_dir / "A"
         dir_b = test_dir / "B"
         dir_lbl = test_dir / "label"
@@ -321,8 +325,8 @@ class ChangeDetectionService:
                 pairs.append({
                     "pair_id": stem,
                     "dataset": "LEVIR-CD",
-                    "image_t1_url": f"/api/image/levir_cd/test/A/{stem}.png",
-                    "image_t2_url": f"/api/image/levir_cd/test/B/{stem}.png",
+                    "image_t1_url": f"/api/image/levir_cd/test/A/{stem}.png" if is_raw else f"/api/image/levir_cd/A/{stem}.png",
+                    "image_t2_url": f"/api/image/levir_cd/test/B/{stem}.png" if is_raw else f"/api/image/levir_cd/B/{stem}.png",
                     "has_ground_truth": has_gt,
                 })
         return pairs
@@ -352,6 +356,11 @@ class ChangeDetectionService:
             p_gt = ROOT / "data" / "raw" / "levir_cd" / "test" / "label" / f"{pair_id}.png"
 
             if not (p_t1.exists() and p_t2.exists()):
+                p_t1 = ROOT / "data" / "demo_samples" / "A" / f"{pair_id}.png"
+                p_t2 = ROOT / "data" / "demo_samples" / "B" / f"{pair_id}.png"
+                p_gt = ROOT / "data" / "demo_samples" / "label" / f"{pair_id}.png"
+
+            if not (p_t1.exists() and p_t2.exists()):
                 raise FileNotFoundError(f"LEVIR-CD test pair '{pair_id}' not found on disk.")
 
             img_a = np.array(Image.open(p_t1).convert("RGB"), dtype=np.uint8)
@@ -359,8 +368,8 @@ class ChangeDetectionService:
             if p_gt.exists():
                 gt_mask = (np.array(Image.open(p_gt).convert("L"), dtype=np.uint8) > 128).astype(np.uint8)
 
-            img_t1_url = f"/api/image/levir_cd/test/A/{pair_id}.png"
-            img_t2_url = f"/api/image/levir_cd/test/B/{pair_id}.png"
+            img_t1_url = f"/api/image/levir_cd/test/A/{pair_id}.png" if (ROOT / "data" / "raw" / "levir_cd" / "test").exists() else f"/api/image/levir_cd/A/{pair_id}.png"
+            img_t2_url = f"/api/image/levir_cd/test/B/{pair_id}.png" if (ROOT / "data" / "raw" / "levir_cd" / "test").exists() else f"/api/image/levir_cd/B/{pair_id}.png"
 
         elif img_a is None or img_b is None:
             raise ValueError("Must provide either a pair_id or both img_a and img_b arrays.")

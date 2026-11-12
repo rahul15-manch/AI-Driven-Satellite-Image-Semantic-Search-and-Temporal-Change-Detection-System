@@ -46,6 +46,14 @@ if app is None or startup_error is not None:
 
     @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"])
     def catch_all(full_path: str):
+        task_dir = "/var/task"
+        root_files = os.listdir(task_dir) if os.path.exists(task_dir) else []
+        tree = {}
+        for root, dirs, files in os.walk(task_dir):
+            rel = os.path.relpath(root, task_dir)
+            if rel.count(os.sep) < 2:
+                tree[rel] = files[:10] + ([f"... and {len(files)-10} more"] if len(files) > 10 else [])
+
         return JSONResponse(
             status_code=500,
             content={
@@ -54,6 +62,8 @@ if app is None or startup_error is not None:
                 "python_version": sys.version,
                 "current_working_dir": os.getcwd(),
                 "sys_path": sys.path,
+                "files_in_var_task": root_files,
+                "dir_tree": tree,
                 "traceback": startup_error,
             },
         )

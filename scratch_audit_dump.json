@@ -1,0 +1,623 @@
+{
+  "Inventory": [
+    [
+      "Section",
+      "Element",
+      "Description",
+      "Source"
+    ],
+    [
+      "Shell",
+      "Application title",
+      "Satellite AI Research System",
+      "Live app"
+    ],
+    [
+      "Shell",
+      "Designation",
+      "Milestone 12 Prototype, CPU execution",
+      "Live app"
+    ],
+    [
+      "Shell",
+      "Navigation",
+      "Semantic Search; Change Detection; Research Results; Methodology & Limitations",
+      "Live app"
+    ],
+    [
+      "Shell",
+      "Backend status indicator",
+      "'Checking Backend...' (suggests separately hosted API)",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Query box + Search Gallery button",
+      "Free-text natural-language query over 1,093 RSICD test scenes",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Retrieval Model dropdown",
+      "3 options: M4 A2 CLIP ViT-B/32 zero-shot; M4 A3 CLIP + domain prompt ensemble (5 RS templates); B/M4 A1 BM25 leave-one-caption-out lexical baseline",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Candidates (Top-K) dropdown",
+      "4, 8, 12, 16, 24 matches",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Sample query chips",
+      "Airport; Harbor; Residential; Storage Tanks; Baseball Field",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Status strip",
+      "Method; Latency (CPU); Found count; Index = FAISS IndexFlatIP (512D)",
+      "Live app"
+    ],
+    [
+      "Semantic Search",
+      "Empty state",
+      "'Ready for Semantic Search'",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Mode selector",
+      "Benchmark Evaluation Mode (LEVIR-CD) vs Temporal Understanding Mode",
+      "Live app; PDF 3.1"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Scene selector",
+      "10 entries: test_1-5, test_10, 20, 30, 40, 50 (subset of 128 test scenes)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Detector selector",
+      "M9 BIT-CD; M10 QAT-CD; M7 FC-Siam-diff; M8 SNUNet-CD; B1 Pixel Difference; B2 SSIM; B3 CVA",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "QAT-CD gamma selector",
+      "gamma = 0.0 (validation optimal); gamma = 0.30 (exploratory, -29.2% FP)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Threshold override + Execute + overlay checkbox",
+      "tau* override input; Execute Change Detection; Show Diagnostic Error Overlay (TP/FP/FN)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Result strip",
+      "Model; Threshold (default 0.4500); Latency; Resolution 1024x1024 (16 x 256 patches)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Panels",
+      "T1; T2; Continuous Difference Map (Inferno, [0,1]); Predicted Mask (>= tau*); Confusion Error Overlay (TP green, FP red, FN blue, TN dark)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Metric tiles",
+      "Precision; Recall; F1; IoU; Accuracy; False Positives (pixels)",
+      "Live app"
+    ],
+    [
+      "Change Detection - Benchmark",
+      "Explain button",
+      "'Explain This Prediction (Qwen 27B)'",
+      "Live app"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Upload panels",
+      "T1 and T2 click-or-drop; PNG, JPG, TIFF; up to 25 MB; optional dates",
+      "Live app; PDF 3.2"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Alignment notice",
+      "Two-stage ORB + ECC co-registration run automatically before inference",
+      "Live app"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Configuration",
+      "GSD (optional); detector (M9 or M10); frozen tau* = 0.4500; Max Regions 1-20; scene description; Execute; Reset",
+      "Live app"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Rejection banner",
+      "'Registration Rejected ... Processing halted safely'",
+      "Live app; PDF 5.1"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Summary tiles",
+      "Status; Detector; Changed Area %; Pixels; Latency; Physical Area",
+      "Live app"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Stage 1 diagnostics",
+      "Co-registration quality diagnostics (PDF: match count, RANSAC inlier ratio, reprojection error, ECC correlation, parallax warnings)",
+      "Live app; PDF 5.1"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Four-stage visualiser",
+      "1 T1; 2 T2 aligned; 3 binary mask; 4 spatial overlay with ranked regions",
+      "Live app; PDF 4.3"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Section D: regions",
+      "Top-ranked clusters; pixel coords (0,0 top-left); notice that boxes are not building footprints",
+      "Live app; PDF 4.4"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Section E: VARI",
+      "Table: Region, Status, T1 VARI, T2 VARI, Delta VARI, Interpretation; exact caveat text",
+      "Live app; PDF 5.4"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Section F: semantic",
+      "8-class taxonomy; evidence-linked hypotheses, not ground truth",
+      "Live app; PDF 2.3"
+    ],
+    [
+      "Change Detection - Temporal",
+      "Section G: AI explanation",
+      "Dual-Stage Reasoning; Explainer: Groq Qwen; 4 headings: Detector Evidence, Scientific Limitations, Unknown Variables, Analyst Recommendations",
+      "Live app"
+    ],
+    [
+      "Research Results",
+      "Comparative benchmark table",
+      "11 columns: Detector, Type, tau*, Precision, Recall, F1, IoU, Accuracy, FP, CPU latency, Peak RSS (loaded dynamically; values not seen)",
+      "Live app"
+    ],
+    [
+      "Research Results",
+      "Bootstrap CIs",
+      "B = 1,000; N = 128 scenes; 95% CI for P, R, F1, IoU (values not seen)",
+      "Live app"
+    ],
+    [
+      "Research Results",
+      "Wilcoxon tests",
+      "Mean delta F1; W; p-value; Significant? at alpha 0.05 (values not seen)",
+      "Live app"
+    ],
+    [
+      "Research Results",
+      "M10 ablation table",
+      "9 columns incl. FP reduction %, precision/recall delta, exchange ratio (values not seen)",
+      "Live app"
+    ],
+    [
+      "Research Results",
+      "Chart gallery",
+      "Tabs: All Charts; M13 End-to-End; M11 Benchmark; M10 QAT-CD; M5/M6 Baselines (charts not seen)",
+      "Live app"
+    ],
+    [
+      "Methodology",
+      "M4 retrieval formulation",
+      "RSICD; 1,093 test scenes; CLIP ViT-B/32; 512-D; L2-norm; FAISS IndexFlatIP; 5 prompt templates",
+      "Live app"
+    ],
+    [
+      "Methodology",
+      "M5-M10 formulation",
+      "T1,T2 in R^(HxWx3); D(x,y) in [0,1]; per-detector tau*",
+      "Live app"
+    ],
+    [
+      "Methodology",
+      "Hardware/profiling",
+      "Apple Silicon arm64 8-core; PyTorch 2.5.1 CPU; 4 threads; <8 GB RAM; peak RSS 877 MB; 1 warm-up; mean/P50/P95",
+      "Live app"
+    ],
+    [
+      "Methodology",
+      "Limitations A/B/C",
+      "Test-set reuse; QAT active gating exploratory; SNUNet-CD >53 M false-positive pixels",
+      "Live app"
+    ]
+  ],
+  "Feature Matrix": [
+    [
+      "#",
+      "Component",
+      "Technical role",
+      "Evidence source",
+      "Status",
+      "Gap / note"
+    ],
+    [
+      1,
+      "CLIP ViT-B/32 retrieval",
+      "Dual encoder, shared 512-D space, zero-shot",
+      "Live UI + methodology",
+      "Needs verification",
+      "Architecture details need code confirmation"
+    ],
+    [
+      2,
+      "L2 norm + FAISS IndexFlatIP",
+      "Inner product = cosine similarity; exact brute-force search",
+      "Live methodology",
+      "Confirmed",
+      "As described"
+    ],
+    [
+      3,
+      "Prompt ensemble (A3)",
+      "Five templates averaged then normalized",
+      "Live methodology",
+      "Unknown",
+      "The five prompts are not available"
+    ],
+    [
+      4,
+      "BM25 baseline (A1)",
+      "Lexical baseline, leave-one-caption-out",
+      "Live dropdown only",
+      "Unknown",
+      "Not in original prompt; needs code and results"
+    ],
+    [
+      5,
+      "Retrieval metrics",
+      "Recall@K, Precision@K, mAP",
+      "None",
+      "Not seen",
+      "No measured retrieval metrics seen; treat as proposed"
+    ],
+    [
+      6,
+      "B1 / B2 / B3",
+      "Classical baselines (L1, 1-SSIM, CVA)",
+      "Live methodology",
+      "Needs verification",
+      "Formulas and normalization need code check"
+    ],
+    [
+      7,
+      "M7 / M8 / M9",
+      "FC-Siam-diff, SNUNet-CD, BIT-CD",
+      "Live methodology",
+      "Conflict",
+      "Naming conflicts with PDF"
+    ],
+    [
+      8,
+      "M10 QAT-CD",
+      "Multi-signal quality gating",
+      "Live methodology",
+      "Unknown",
+      "Gating equation unknown"
+    ],
+    [
+      9,
+      "Confusion overlay and metrics",
+      "TP/FP/FN/TN; P, R, F1, IoU, Acc",
+      "Live UI",
+      "Confirmed",
+      "Standard formulas"
+    ],
+    [
+      10,
+      "ORB + ECC registration",
+      "Two-stage alignment with rejection policy",
+      "Live UI + PDF",
+      "Needs verification",
+      "Acceptance thresholds unknown"
+    ],
+    [
+      11,
+      "Region extraction",
+      "Connected components, ranked clusters, bounding boxes",
+      "PDF 4.4",
+      "Unknown",
+      "Algorithm unknown (Phase 3A)"
+    ],
+    [
+      12,
+      "GSD and physical area",
+      "Gated on valid positive GSD",
+      "Live UI + PDF",
+      "Confirmed",
+      null
+    ],
+    [
+      13,
+      "VARI",
+      "RGB greenness proxy; exact caveat preserved",
+      "Live UI + PDF",
+      "Needs verification",
+      "Formula must be checked in source"
+    ],
+    [
+      14,
+      "Semantic taxonomy",
+      "8 classes; hypotheses only",
+      "Live UI + PDF",
+      "Confirmed",
+      null
+    ],
+    [
+      15,
+      "Dual-stage reasoning",
+      "Vision stage + Groq Qwen explainer",
+      "Live UI + PDF",
+      "Unknown",
+      "Stage 1 model unidentified"
+    ],
+    [
+      16,
+      "Benchmark / CI / Wilcoxon / ablation tables",
+      "Core results",
+      "Live (dynamic)",
+      "Not seen",
+      "Values unavailable"
+    ],
+    [
+      17,
+      "Research charts (M5-M13)",
+      "Publication figures",
+      "Live (dynamic)",
+      "Not seen",
+      "Charts not visible"
+    ],
+    [
+      18,
+      "Hardware and profiling",
+      "Apple Silicon, 4 threads, 877 MB peak RSS",
+      "Live methodology",
+      "Reported",
+      "Valid only for the stated environment"
+    ],
+    [
+      19,
+      "Limitations A, B, C",
+      "Threats to validity",
+      "Live methodology",
+      "Confirmed",
+      "Match original prompt"
+    ],
+    [
+      20,
+      "Test evidence (13 / 91 / 404 tests)",
+      "Regression evidence only",
+      "PDF",
+      "Reported",
+      "Not rerun; not a measure of accuracy"
+    ]
+  ],
+  "Discrepancies": [
+    [
+      "#",
+      "Topic",
+      "Source A",
+      "Source B",
+      "Issue",
+      "Action needed",
+      "Priority"
+    ],
+    [
+      1,
+      "Detector registry",
+      "PDF: B1-B4, 'M8 ResNet-UNet', M9, M10",
+      "Live: B1-B3, M7 FC-Siam-diff, M8 SNUNet-CD, M9, M10",
+      "B4 absent live; M7 absent in PDF; M8 named differently",
+      "Check model registry in repo",
+      "High"
+    ],
+    [
+      2,
+      "QAT parameter",
+      "PDF: QAT scaling factor gamma = 0.0315 (locked)",
+      "Live: gamma options 0.0 and 0.30",
+      "Unclear whether 0.0315 is a different parameter, old value or error",
+      "Check preserved config",
+      "High"
+    ],
+    [
+      3,
+      "Explanation structure",
+      "PDF: six tabs (Executive Summary ... Human Review Guidelines)",
+      "Live: four headings (Detector Evidence, Scientific Limitations, Unknown Variables, Analyst Recommendations)",
+      "Cannot claim they are the same component",
+      "Check UI code and LLM schema",
+      "High"
+    ],
+    [
+      4,
+      "LLM identity",
+      "Button: 'Qwen 27B'; report: 'Groq Qwen'",
+      "Exact model ID and vision-stage model not stated",
+      "Dual-stage architecture cannot be described fully",
+      "Provide model IDs and prompts",
+      "Medium"
+    ],
+    [
+      5,
+      "Panel naming",
+      "PDF: 'Co-Registered T2'",
+      "Live: 'Observation T2 (Aligned)'",
+      "Cosmetic",
+      "Confirm live names are final",
+      "Low"
+    ],
+    [
+      6,
+      "BM25 baseline",
+      "Original prompt describes CLIP only",
+      "Live dropdown includes BM25 (A1)",
+      "Extra retrieval model to document",
+      "Provide A1 details and results",
+      "Medium"
+    ],
+    [
+      7,
+      "Scene subset",
+      "128 test scenes evaluated",
+      "Selector exposes 10 scenes",
+      "Confirm deliberate precomputed demo subset",
+      "Confirm",
+      "Low"
+    ],
+    [
+      8,
+      "B2 SSIM threshold",
+      "tau* = 0.9000 on 1-SSIM dissimilarity",
+      "Unusually high",
+      "May be correct (validation-calibrated); normalization unknown",
+      "Check map normalization in code",
+      "Medium"
+    ],
+    [
+      9,
+      "Milestone vs phase numbering",
+      "Live: M1-M13",
+      "PDF: Phases 3A-3E",
+      "Mapping not stated; meaning of M13 unknown",
+      "Provide mapping and M13 definition",
+      "High"
+    ],
+    [
+      10,
+      "Frontend scope",
+      "PDF: Streamlit + web SPA",
+      "Live: SPA with external backend",
+      "Hosting and architecture to confirm",
+      "Provide deployment details",
+      "Low"
+    ]
+  ],
+  "Data Requests": [
+    [
+      "#",
+      "Item",
+      "Details",
+      "Impact if missing",
+      "Status"
+    ],
+    [
+      1,
+      "Repository / key files",
+      "Detector registry & config; QAT-CD module; registration code (thresholds); region extraction; VARI function; retrieval code (5 prompts, BM25); LLM pipeline & prompts",
+      "Blocks verification of Modules 2, 3, 5, 7-10",
+      "Pending"
+    ],
+    [
+      2,
+      "M11/M13 result artifacts",
+      "CSV/JSON: benchmark, bootstrap CIs, Wilcoxon, ablation, latency, RSS",
+      "Blocks all results tables",
+      "Pending"
+    ],
+    [
+      3,
+      "Chart images",
+      "Research Results gallery images or source files",
+      "Blocks 11.5 figures",
+      "Pending"
+    ],
+    [
+      4,
+      "Retrieval results",
+      "Measured Recall@K / mAP for A1/A2/A3, if any",
+      "Otherwise described as proposed only",
+      "Pending"
+    ],
+    [
+      5,
+      "Discrepancy answers",
+      "Items 1, 2, 3, 9 especially; plus Phase 3A-3C reports",
+      "Blocks Stage 2 sign-off",
+      "Pending"
+    ],
+    [
+      6,
+      "Institutional details",
+      "Name, guide, department, university, year",
+      "Placeholders otherwise",
+      "Pending"
+    ]
+  ],
+  "Consistency Check": [
+    [
+      "Evaluated-pixel consistency check",
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      null
+    ],
+    [
+      "Test scenes (N)",
+      128,
+      "Source: Live app"
+    ],
+    [
+      "Image height (px)",
+      1024,
+      "Source: Live app"
+    ],
+    [
+      "Image width (px)",
+      1024,
+      "Source: Live app"
+    ],
+    [
+      "Reported evaluated pixels",
+      134217728,
+      "Source: Live app"
+    ],
+    [
+      null,
+      null,
+      null
+    ],
+    [
+      "Computed pixels (N x H x W)",
+      134217728,
+      null
+    ],
+    [
+      "Matches reported value?",
+      "Yes",
+      null
+    ],
+    [
+      null,
+      null,
+      null
+    ],
+    [
+      "Blue = inputs taken from the live application; black = formulas.",
+      null,
+      null
+    ]
+  ]
+}

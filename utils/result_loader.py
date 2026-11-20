@@ -44,18 +44,22 @@ def load_rsicd_validation_report() -> Optional[Dict[str, Any]]:
 
 
 def get_available_rsicd_images() -> List[str]:
-    """Returns sorted list of available RSICD raw image filenames."""
+    """Returns sorted list of available RSICD raw image filenames with demo fallback."""
     img_dir = ROOT / "data" / "raw" / "rsicd" / "images"
     if not img_dir.exists():
-        return []
+        img_dir = ROOT / "data" / "demo_samples" / "rsicd"
+        if not img_dir.exists():
+            return []
     return sorted([f.name for f in img_dir.glob("*.jpg")])
 
 
 def get_available_levir_test_pairs() -> List[str]:
-    """Returns sorted list of available LEVIR-CD test sample IDs (e.g. 'test_1', 'test_20')."""
+    """Returns sorted list of available LEVIR-CD test sample IDs (e.g. 'test_1', 'test_20') with demo fallback."""
     test_a_dir = ROOT / "data" / "raw" / "levir_cd" / "test" / "A"
     if not test_a_dir.exists():
-        return []
+        test_a_dir = ROOT / "data" / "demo_samples" / "A"
+        if not test_a_dir.exists():
+            return []
     # Sort numerically by index
     stems = [p.stem for p in test_a_dir.glob("*.png")]
     def sort_key(s: str) -> int:

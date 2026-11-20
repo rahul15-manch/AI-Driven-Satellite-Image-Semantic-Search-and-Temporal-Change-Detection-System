@@ -187,10 +187,27 @@ def serve_dataset_image(dataset: str, path: str):
         )
 
     if not target_path.exists() or not target_path.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Image not found at path: {path}",
-        )
+        # Graceful fallback for minimal deployment (only necessary demo images included)
+        if dataset_key == "rsicd" and demo_rsicd.exists():
+            clean_filename = Path(path).name
+            cat_prefix = clean_filename.rsplit("_", 1)[0].lower() if "_" in clean_filename else ""
+            matched = list(demo_rsicd.glob(f"{cat_prefix}_*.jpg")) if cat_prefix else []
+            if matched:
+                target_path = matched[0]
+            else:
+                all_demos = sorted(demo_rsicd.glob("*.jpg"))
+                if all_demos:
+                    target_path = all_demos[0]
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Image not found at path: {path}",
+                    )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image not found at path: {path}",
+            )
 
     # Content type
     suffix = target_path.suffix.lower()

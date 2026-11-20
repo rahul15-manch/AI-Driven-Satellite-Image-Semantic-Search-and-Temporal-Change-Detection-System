@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: satellite-ai-system
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "python run_web.py"
+    healthCheckPath: "/api/health"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.14"
+      - key: PYTHONPATH
+        value: "."
+      - key: HOST
+        value: "0.0.0.0"
